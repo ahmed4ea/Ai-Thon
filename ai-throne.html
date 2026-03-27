@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Throne — Game District</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080C14;--bg2:#0F1520;--bg3:#141D2E;--bg4:#1A2438;--bg5:#202D44;
+  --gold:#C9A84C;--gold-l:#E8C97A;--gold-d:#7A6130;--gold-faint:rgba(201,168,76,0.08);
+  --text:#E2DDD4;--muted:#6B7891;--muted2:#8994A8;--white:#F0EDE8;
+  --blue:#3B7AE8;--teal:#26B5A4;--coral:#E8634A;--purple:#7B6EF6;
+  --border:rgba(201,168,76,0.12);--border2:rgba(255,255,255,0.06);
+  --radius:10px;--radius-lg:14px;--sidebar:240px;--topbar:56px;
+  --danger:#E8634A;--success:#26B5A4;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit}
+img{display:block;max-width:100%}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:5px}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+#app{min-height:100vh;display:flex;align-items:stretch}
+.shell{display:flex;width:100%;height:100vh;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:100}
+.sidebar-logo{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-text{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.logo-sub{font-size:10px;color:var(--gold-d);letter-spacing:2px;text-transform:uppercase;font-family:'Syne',sans-serif}
+.sidebar-nav{flex:1;padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.nav-section{font-size:10px;font-family:'Syne',sans-serif;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);padding:12px 10px 6px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:background .15s,color .15s;color:var(--muted2);font-size:13.5px;position:relative;border:1px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--gold-faint);color:var(--gold);border-color:rgba(201,168,76,0.2)}
+.nav-icon{width:17px;height:17px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--coral);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;font-family:'Syne',sans-serif}
+.nav-badge.green{background:var(--teal)}
+.sidebar-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s;flex-shrink:0}
+.sidebar-user:hover{background:var(--bg3)}
+.user-role-badge{font-size:10px;background:rgba(201,168,76,0.15);color:var(--gold);padding:2px 7px;border-radius:10px;font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap}
+
+/* Main area */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:var(--topbar);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.topbar-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--white)}
+.topbar-sub{font-size:12px;color:var(--muted)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.event-badge{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);color:var(--gold);font-size:11px;font-family:'Syne',sans-serif;font-weight:600;letter-spacing:1px;padding:4px 12px;border-radius:20px}
+.icon-btn{width:34px;height:34px;border:1px solid var(--border2);border-radius:8px;background:transparent;color:var(--muted2);display:flex;align-items:center;justify-content:center;transition:all .15s;position:relative;flex-shrink:0}
+.icon-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border)}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--coral);border-radius:50%;border:1.5px solid var(--bg2)}
+#content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* ═══════════════════════════════════════════
+   AUTH PAGES
+═══════════════════════════════════════════ */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 70% 60% at 50% 30%,#1A2644 0%,var(--bg) 100%)}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:420px}
+.auth-logo{text-align:center;margin-bottom:32px}
+.auth-logo h1{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;background:linear-gradient(135deg,var(--gold-l),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.auth-logo p{font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;font-family:'Syne',sans-serif;margin-top:4px}
+.auth-tabs{display:flex;gap:0;background:var(--bg3);border-radius:10px;padding:4px;margin-bottom:28px}
+.auth-tab{flex:1;padding:8px;text-align:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--muted2);border-radius:7px;cursor:pointer;transition:all .15s}
+.auth-tab.active{background:var(--bg2);color:var(--white);box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.auth-form{display:flex;flex-direction:column;gap:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ═══════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════ */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:500;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;font-family:'Syne',sans-serif}
+.field input,.field select,.field textarea{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:10px 13px;color:var(--text);font-size:13px;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(201,168,76,0.4)}
+.field select{cursor:pointer}
+.field select option{background:var(--bg4)}
+.field textarea{resize:vertical;min-height:80px}
+.field input[type="file"]{padding:8px 12px;cursor:pointer}
+.btn-primary{width:100%;padding:12px;background:var(--gold);color:#000;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:none;border-radius:10px;transition:background .15s;letter-spacing:.3px}
+.btn-primary:hover{background:var(--gold-l)}
+.btn-primary:disabled{background:var(--bg5);color:var(--muted);cursor:not-allowed}
+.btn-secondary{padding:9px 18px;background:transparent;border:1px solid var(--border2);color:var(--muted2);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;border-radius:8px;transition:all .15s}
+.btn-secondary:hover{border-color:var(--border);color:var(--text);background:var(--bg3)}
+.btn-danger{padding:7px 14px;background:rgba(232,99,74,0.1);border:1px solid rgba(232,99,74,0.3);color:var(--coral);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;border-radius:6px;transition:all .15s}
+.btn-danger:hover{background:rgba(232,99,74,0.2)}
+.btn-success{padding:7px 14px;background:rgba(38,181,164,0.1);border:1px solid rgba(38,181,164,0.3);color:var(--teal);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;border-radius:6px;transition:all .15s}
+.btn-success:hover{background:rgba(38,181,164,0.2)}
+.btn-gold-sm{padding:7px 14px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:var(--gold);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;border-radius:6px;transition:all .15s}
+.btn-gold-sm:hover{background:rgba(201,168,76,0.2)}
+.err-msg{color:var(--coral);font-size:12px;text-align:center;padding:8px;background:rgba(232,99,74,0.08);border-radius:6px;border:1px solid rgba(232,99,74,0.2)}
+.link-btn{background:none;border:none;color:var(--gold);font-size:13px;cursor:pointer;text-decoration:underline}
+.link-btn:hover{color:var(--gold-l)}
+
+/* ═══════════════════════════════════════════
+   AVATAR
+═══════════════════════════════════════════ */
+.ava{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;color:#000;flex-shrink:0;overflow:hidden;background:var(--bg4)}
+.ava img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ava-xs{width:22px;height:22px;font-size:9px}
+.ava-sm{width:28px;height:28px;font-size:11px}
+.ava-md{width:38px;height:38px;font-size:14px}
+.ava-lg{width:52px;height:52px;font-size:19px}
+.ava-xl{width:72px;height:72px;font-size:26px}
+
+/* ═══════════════════════════════════════════
+   TOAST NOTIFICATIONS
+═══════════════════════════════════════════ */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;pointer-events:all;animation:toastIn .25s ease;max-width:320px;border:1px solid;display:flex;align-items:center;gap:8px}
+.toast.success{background:rgba(38,181,164,0.15);border-color:rgba(38,181,164,0.35);color:var(--teal)}
+.toast.error{background:rgba(232,99,74,0.15);border-color:rgba(232,99,74,0.35);color:var(--coral)}
+.toast.info{background:rgba(201,168,76,0.12);border-color:rgba(201,168,76,0.3);color:var(--gold)}
+@keyframes toastIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ═══════════════════════════════════════════
+   PAGE LAYOUTS
+═══════════════════════════════════════════ */
+.page{padding:20px;flex:1}
+.page-2col{display:flex;gap:20px;padding:20px;flex:1;overflow:hidden}
+.page-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.right-col{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.page-hdr{margin-bottom:20px}
+.page-hdr h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--white);margin-bottom:4px}
+.page-hdr p{font-size:13px;color:var(--muted)}
+
+/* ═══════════════════════════════════════════
+   CARDS & CHIPS
+═══════════════════════════════════════════ */
+.card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg)}
+.card-hdr{padding:12px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.card-hdr-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--white);letter-spacing:.5px;text-transform:uppercase}
+.chip-bar{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:5px 13px;border-radius:20px;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;border:1px solid var(--border2);background:var(--bg3);color:var(--muted2);cursor:pointer;transition:all .15s;white-space:nowrap;letter-spacing:.3px}
+.chip:hover{border-color:var(--border);color:var(--text)}
+.chip.active{background:var(--gold-faint);border-color:rgba(201,168,76,0.35);color:var(--gold)}
+.chip.teal.active{background:rgba(38,181,164,0.08);border-color:rgba(38,181,164,0.3);color:var(--teal)}
+.tag{padding:3px 8px;border-radius:4px;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+
+/* ═══════════════════════════════════════════
+   SUBMISSION CARDS (grid)
+═══════════════════════════════════════════ */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.sub-card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;display:flex;flex-direction:column}
+.sub-card:hover{transform:translateY(-2px);border-color:rgba(201,168,76,0.25);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.card-thumb{height:130px;background:var(--bg4);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-thumb img{width:100%;height:100%;object-fit:cover}
+.card-thumb-text{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:rgba(201,168,76,0.06);text-transform:uppercase;text-align:center;padding:0 12px;letter-spacing:-1px;position:absolute}
+.card-thumb-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg3))}
+.dept-tag{position:absolute;top:10px;left:10px;z-index:2;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;backdrop-filter:blur(8px)}
+.rated-badge{position:absolute;top:10px;right:10px;z-index:2;font-size:10px;font-family:'Syne',sans-serif;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(38,181,164,0.2);border:1px solid rgba(38,181,164,0.4);color:var(--teal);backdrop-filter:blur(8px)}
+.card-body{padding:14px;flex:1;display:flex;flex-direction:column;gap:8px}
+.card-author{display:flex;align-items:center;gap:8px}
+.card-author-name{font-size:12px;color:var(--muted2)}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--white);line-height:1.3}
+.card-summary{font-size:12px;color:var(--muted2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+.card-footer{padding:10px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:8px}
+.score-disp{display:flex;align-items:baseline;gap:2px}
+.score-num{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--gold)}
+.score-max{font-size:11px;color:var(--gold-d)}
+.score-count{font-size:11px;color:var(--muted);margin-left:3px}
+.card-stat{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted2)}
+.rate-btn{margin-left:auto;padding:5px 12px;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;border-radius:6px;border:1px solid;transition:all .15s;background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.25);color:var(--gold)}
+.rate-btn:hover{background:rgba(201,168,76,0.16)}
+.rate-btn.rated{background:rgba(38,181,164,0.08);border-color:rgba(38,181,164,0.3);color:var(--teal)}
+
+/* ═══════════════════════════════════════════
+   SUBMISSION MODAL
+═══════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:2000;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;backdrop-filter:blur(6px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:18px;width:100%;max-width:960px;overflow:hidden;margin:auto;animation:modalIn .25s ease}
+@keyframes modalIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-layout{display:flex;min-height:500px;max-height:85vh}
+.modal-left{flex:1;min-width:0;border-right:1px solid var(--border2);overflow-y:auto;display:flex;flex-direction:column}
+.modal-right{width:320px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:flex-start;gap:12px;flex-shrink:0}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--white);line-height:1.2}
+.modal-close{width:30px;height:30px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-size:16px}
+.modal-close:hover{background:var(--bg4);color:var(--text)}
+.sec-lbl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);margin-bottom:8px}
+.modal-sec{padding:14px 18px;border-bottom:1px solid var(--border2)}
+.pdf-box{background:var(--bg4);border:1px solid var(--border2);border-radius:10px;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden}
+.pdf-box-bg{position:absolute;font-family:'Syne',sans-serif;font-size:64px;font-weight:800;color:rgba(201,168,76,0.03);letter-spacing:-3px}
+.pdf-open-btn{position:relative;z-index:1;background:rgba(232,99,74,0.12);border:1px solid rgba(232,99,74,0.3);color:var(--coral);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;transition:all .15s}
+.pdf-open-btn:hover{background:rgba(232,99,74,0.22)}
+.video-row{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s}
+.video-row:hover{border-color:rgba(201,168,76,0.3)}
+.play-btn{width:32px;height:32px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.demo-link-btn{display:flex;align-items:center;gap:8px;background:rgba(59,122,232,0.08);border:1px solid rgba(59,122,232,0.2);border-radius:8px;padding:9px 13px;color:var(--blue);font-size:13px;font-weight:500;transition:all .15s}
+.demo-link-btn:hover{background:rgba(59,122,232,0.15)}
+
+/* Rating panel */
+.rating-panel{padding:14px 16px;border-bottom:1px solid var(--border2);flex-shrink:0}
+.rating-panel-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);margin-bottom:10px}
+.criteria-row{margin-bottom:9px}
+.criteria-lbl{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px;color:var(--muted2)}
+.criteria-val{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--gold)}
+input[type=range]{width:100%;height:4px;border-radius:4px;background:var(--bg5);appearance:none;-webkit-appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--gold);border:2px solid var(--bg2);cursor:pointer;box-shadow:0 0 0 2px rgba(201,168,76,0.2)}
+input[type=range]:disabled{opacity:.5;cursor:not-allowed}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border2);margin-top:4px}
+.total-val{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--gold)}
+.submit-rating-btn{width:100%;padding:9px;background:var(--gold);color:#000;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;border-radius:7px;transition:background .15s;margin-top:7px}
+.submit-rating-btn:hover{background:var(--gold-l)}
+.submit-rating-btn.rated{background:rgba(38,181,164,0.12);color:var(--teal);border:1px solid rgba(38,181,164,0.3)}
+.submit-rating-btn.rated:hover{background:rgba(38,181,164,0.18)}
+
+/* Aggregate scores */
+.agg-section{padding:10px 16px;border-bottom:1px solid var(--border2);flex-shrink:0}
+.agg-big{display:flex;align-items:baseline;gap:4px;margin-bottom:8px}
+.agg-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--gold)}
+.agg-sub{font-size:12px;color:var(--muted)}
+.agg-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.agg-bar-lbl{font-size:11px;color:var(--muted);width:80px;flex-shrink:0}
+.agg-bar-wrap{flex:1;background:var(--bg5);border-radius:4px;height:4px;overflow:hidden}
+.agg-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold-d),var(--gold));transition:width .5s ease}
+.agg-bar-val{font-size:11px;font-family:'Syne',sans-serif;font-weight:600;color:var(--muted2);width:28px;text-align:right;flex-shrink:0}
+
+/* Comments */
+.comments-area{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:1px}
+.comment-item{padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.comment-item:last-child{border-bottom:none}
+.comment-top{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.comment-author{font-size:12px;font-weight:500;color:var(--white)}
+.comment-time{font-size:10px;color:var(--muted)}
+.comment-body{font-size:12.5px;color:var(--muted2);line-height:1.55;padding-left:35px;margin-top:-2px}
+.comment-reply-btn{background:none;border:none;font-size:11px;color:var(--muted);padding-left:35px;margin-top:2px;cursor:pointer}
+.comment-reply-btn:hover{color:var(--text)}
+.comment-reply{margin-left:35px;padding:8px 10px;background:rgba(255,255,255,0.02);border-left:2px solid var(--border);margin-top:4px;border-radius:0 6px 6px 0}
+.comment-input-row{padding:10px 14px;border-top:1px solid var(--border2);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.comment-textarea{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;resize:none;min-height:36px;max-height:80px;outline:none;transition:border-color .15s;line-height:1.4}
+.comment-textarea:focus{border-color:rgba(201,168,76,0.3)}
+.comment-send{width:33px;height:33px;background:var(--gold);border:none;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.comment-send:hover{background:var(--gold-l)}
+
+/* ═══════════════════════════════════════════
+   WIDGETS (right column)
+═══════════════════════════════════════════ */
+.widget{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden}
+.timer-widget{background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(201,168,76,0.04));border:1px solid rgba(201,168,76,0.2);border-radius:var(--radius-lg);padding:16px}
+.timer-lbl{font-size:10px;font-family:'Syne',sans-serif;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);margin-bottom:6px}
+.timer-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--white);margin-bottom:10px}
+.timer-nums{display:flex;gap:6px}
+.timer-unit{background:rgba(0,0,0,0.3);border:1px solid rgba(201,168,76,0.12);border-radius:8px;padding:7px;text-align:center;flex:1}
+.timer-n{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--gold);line-height:1}
+.timer-u{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* Leaderboard rows */
+.lb-row{display:flex;align-items:center;padding:9px 14px;gap:9px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background .15s}
+.lb-row:hover{background:rgba(255,255,255,0.02)}
+.lb-row:last-child{border-bottom:none}
+.lb-rank{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;width:20px;text-align:center}
+.r1{color:var(--gold)}.r2{color:#B0B8C8}.r3{color:#CD8B5A}.r-rest{color:var(--bg5);font-size:11px}
+.lb-meta{flex:1;min-width:0}
+.lb-name{font-size:12px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-sub{font-size:10px;color:var(--muted)}
+.lb-score{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--gold);flex-shrink:0}
+
+/* Full leaderboard rows */
+.lb-full-row{display:flex;align-items:center;padding:12px 20px;gap:12px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background .15s}
+.lb-full-row:hover{background:rgba(255,255,255,0.02)}
+.lb-full-row.mine{background:rgba(201,168,76,0.04);border-left:2px solid rgba(201,168,76,0.3)}
+.lb-full-rank{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;width:26px;text-align:center}
+.lb-full-info{flex:1;min-width:0}
+.lb-full-name{font-size:13px;font-weight:500;color:var(--white)}
+.lb-full-dept{font-size:11px;color:var(--muted)}
+.lb-full-score{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--gold);text-align:right;flex-shrink:0}
+.lb-full-sub{font-size:10px;color:var(--muted);text-align:right}
+
+/* ═══════════════════════════════════════════
+   SUBMIT WIZARD
+═══════════════════════════════════════════ */
+.wizard-wrap{max-width:620px;margin:0 auto}
+.wizard-steps{display:flex;gap:0;margin-bottom:28px;position:relative}
+.wizard-steps::before{content:'';position:absolute;top:17px;left:18px;right:18px;height:2px;background:var(--bg5);z-index:0}
+.wstep-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;z-index:1}
+.wdot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;transition:all .2s;border:2px solid var(--bg5);background:var(--bg3);color:var(--muted)}
+.wdot.done{background:var(--teal);border-color:var(--teal);color:#000}
+.wdot.active{background:var(--gold);border-color:var(--gold);color:#000}
+.wlbl{font-size:11px;color:var(--muted);font-family:'Syne',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.wlbl.done{color:var(--teal)}.wlbl.active{color:var(--gold)}
+.wizard-card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:28px;margin-bottom:14px}
+.wizard-card h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:6px}
+.wizard-card>p{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6}
+.wizard-nav{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.upload-zone{border:2px dashed rgba(201,168,76,0.2);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(201,168,76,0.02);position:relative}
+.upload-zone:hover{border-color:rgba(201,168,76,0.4);background:rgba(201,168,76,0.05)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone h5{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;pointer-events:none}
+.upload-zone p{font-size:12px;color:var(--muted);pointer-events:none}
+.upload-success{border-color:rgba(38,181,164,0.4);background:rgba(38,181,164,0.04)}
+
+/* ═══════════════════════════════════════════
+   PROFILE PAGE
+═══════════════════════════════════════════ */
+.profile-banner{height:110px;background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(123,110,246,0.1));border-radius:var(--radius-lg) var(--radius-lg) 0 0;border:1px solid var(--border2);border-bottom:none;position:relative}
+.profile-ava-wrap{position:absolute;bottom:-26px;left:22px}
+.profile-ava-edit{position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2);cursor:pointer;font-size:10px}
+.profile-body{background:var(--bg3);border:1px solid var(--border2);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:12px 22px 22px;margin-bottom:14px}
+.profile-name-row{padding-top:34px;margin-bottom:12px;display:flex;align-items:flex-end;gap:10px}
+.profile-fullname{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--white)}
+.profile-info{font-size:12px;color:var(--muted);margin-top:2px}
+.profile-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.pstat{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:10px;text-align:center}
+.pstat-n{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--gold)}
+.pstat-l{font-size:10px;color:var(--muted);margin-top:2px}
+.badge-chips{display:flex;gap:6px;flex-wrap:wrap}
+.pbadge{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-family:'Syne',sans-serif;font-weight:600;border:1px solid}
+
+/* ═══════════════════════════════════════════
+   ADMIN PANEL
+═══════════════════════════════════════════ */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.astat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.astat{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px;text-align:center}
+.astat-n{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+.astat-l{font-size:11px;color:var(--muted);margin-top:2px}
+.pending-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.pending-row:last-child{border-bottom:none}
+.pu-info{flex:1;min-width:0}
+.pu-name{font-size:12px;font-weight:500;color:var(--white)}
+.pu-meta{font-size:11px;color:var(--muted)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-lbl{font-size:13px;color:var(--text)}
+.toggle-sub{font-size:11px;color:var(--muted)}
+.toggle-wrap{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;border-radius:11px;transition:background .2s;background:var(--bg5);border:1px solid var(--border2);cursor:pointer}
+.toggle-track.on{background:var(--teal);border-color:var(--teal)}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none}
+.toggle-thumb.on{transform:translateX(18px)}
+
+/* ═══════════════════════════════════════════
+   PENDING APPROVAL SCREEN
+═══════════════════════════════════════════ */
+.pending-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.pending-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:48px;max-width:420px;text-align:center}
+.pending-card h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--white);margin-bottom:12px}
+.pending-card p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px}
+
+/* ═══════════════════════════════════════════
+   LOADING & EMPTY
+═══════════════════════════════════════════ */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--muted);font-size:13px;gap:8px}
+.spinner{width:18px;height:18px;border:2px solid var(--bg5);border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty h4{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;color:var(--muted2);margin-bottom:6px}
+
+/* ═══════════════════════════════════════════
+   SUBMIT CTA BANNER
+═══════════════════════════════════════════ */
+.submit-cta{background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(201,168,76,0.04));border:1px solid rgba(201,168,76,0.25);border-radius:var(--radius-lg);padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .2s}
+.submit-cta:hover{border-color:rgba(201,168,76,0.45)}
+.submit-cta-icon{width:38px;height:38px;background:rgba(201,168,76,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.submit-cta h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px}
+.submit-cta p{font-size:11px;color:var(--muted)}
+
+/* ═══════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════ */
+.hidden{display:none!important}
+.sep{width:100%;height:1px;background:var(--border2);margin:4px 0}
+.text-muted{color:var(--muted);font-size:12px}
+.text-gold{color:var(--gold)}
+.text-teal{color:var(--teal)}
+.text-coral{color:var(--coral)}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.flex-row{display:flex;align-items:center;gap:8px}
+.link-text{font-size:11px;color:var(--gold);cursor:pointer}
+.link-text:hover{color:var(--gold-l)}
+.sort-chip{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;border:1px solid var(--border2);background:var(--bg3);color:var(--muted2);cursor:pointer;transition:all .15s}
+.sort-chip.active{background:var(--bg4);border-color:var(--border);color:var(--text)}
+.not-rated-btn{padding:5px 13px;background:rgba(38,181,164,0.06);border:1px solid rgba(38,181,164,0.22);color:var(--teal);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;border-radius:6px;transition:all .15s}
+.not-rated-btn:hover,.not-rated-btn.active{background:rgba(38,181,164,0.14)}
+.announcement-bar{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--gold-l);display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-container"></div>
+
+<!-- SUBMISSION MODAL (always in DOM) -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-layout">
+      <div class="modal-left" id="modal-left"></div>
+      <div class="modal-right" id="modal-right"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG — Replace these with your Supabase project values
+═══════════════════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://qsitctuopndcxfxqpezj.supabase.co'
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzaXRjdHVvcG5kY3hmeHFwZXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Njc1MjEsImV4cCI6MjA5MDE0MzUyMX0.Ll4fis9xsUTBJ3VO9erzDgNlOXRmXHFQBGpZaj_oiJY'
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const S = {
+  user: null, profile: null, event: null,
+  page: 'feed', pageParams: {},
+  notifications: [],
+  realtimeChan: null,
+  filterCat: 'all', sortBy: 'top', notRatedOnly: false,
+  wizardStep: 0, wizardData: {},
+  openModal: null,   // submission id currently open
+  allProfiles: {},   // id -> profile cache
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DEPT COLORS
+═══════════════════════════════════════════════════════════════ */
+const DEPT_COLORS = {
+  UA:'#3B7AE8', Engineering:'#26B5A4', QA:'#7B6EF6',
+  Creative:'#E8634A', Product:'#C9A84C', Finance:'#26B5A4',
+  Ops:'#7B6EF6', HR:'#E8634A', Marketing:'#3B7AE8',
+  Data:'#C9A84C', Others:'#8994A8'
+}
+const AVA_PALETTE = [
+  '#C9A84C','#26B5A4','#7B6EF6','#E8634A',
+  '#3B7AE8','#E8C97A','#CD8B5A','#4CAF50'
+]
+function deptColor(d){ return DEPT_COLORS[d]||'#8994A8' }
+function deptBg(d){ const c=deptColor(d); return hexAlpha(c,0.15) }
+function deptBorder(d){ const c=deptColor(d); return hexAlpha(c,0.3) }
+function hexAlpha(h,a){
+  const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h)
+  if(!r) return `rgba(201,168,76,${a})`
+  return `rgba(${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)},${a})`
+}
+function avaColor(str){
+  if(!str) return AVA_PALETTE[0]
+  let h=0; for(let i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))>>>0
+  return AVA_PALETTE[h % AVA_PALETTE.length]
+}
+function initials(name){
+  if(!name) return '?'
+  return name.split(' ').filter(Boolean).map(w=>w[0].toUpperCase()).slice(0,2).join('')
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════ */
+function toast(msg, type='info'){
+  const c = document.getElementById('toast-container')
+  const t = document.createElement('div')
+  t.className = `toast ${type}`
+  t.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`
+  c.appendChild(t)
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300) }, 3500)
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING
+═══════════════════════════════════════════════════════════════ */
+function loadingHTML(){ return '<div class="loading"><div class="spinner"></div> Loading...</div>' }
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTH FUNCTIONS
+═══════════════════════════════════════════════════════════════ */
+async function doSignup(e){
+  e.preventDefault()
+  const form = e.target
+  const btn = form.querySelector('.btn-primary')
+  const errEl = form.querySelector('.err-msg')
+  errEl.textContent = ''
+  btn.disabled = true; btn.textContent = 'Creating account...'
+  const email    = form.email.value.trim()
+  const password = form.password.value
+  const fullName = form.full_name.value.trim()
+  const dept     = form.department.value
+  const jobTitle = form.job_title.value.trim()
+  const team     = form.team.value.trim()
+  if(!fullName||!dept||!email||!password){
+    errEl.textContent='All required fields must be filled in.'; btn.disabled=false; btn.textContent='Create Account'; return
+  }
+  if(password.length < 8){
+    errEl.textContent='Password must be at least 8 characters.'; btn.disabled=false; btn.textContent='Create Account'; return
+  }
+  try {
+    const { data, error } = await sb.auth.signUp({ email, password })
+    if(error) throw error
+    const uid = data.user.id
+    const { error: pe } = await sb.from('profiles').insert({
+      id: uid, full_name: fullName, department: dept,
+      job_title: jobTitle, team: team, role:'participant', status:'pending'
+    })
+    if(pe) throw pe
+    await sb.auth.signOut()
+    document.getElementById('app').innerHTML = pendingScreenHTML('submitted')
+  } catch(err){
+    errEl.textContent = err.message || 'Signup failed. Please try again.'
+    btn.disabled=false; btn.textContent='Create Account'
+  }
+}
+
+async function doLogin(e){
+  e.preventDefault()
+  const form = e.target
+  const btn  = form.querySelector('.btn-primary')
+  const errEl = form.querySelector('.err-msg')
+  errEl.textContent = ''
+  btn.disabled = true; btn.textContent = 'Signing in...'
+  try {
+    const { error } = await sb.auth.signInWithPassword({
+      email: form.email.value.trim(), password: form.password.value
+    })
+    if(error) throw error
+    // onAuthStateChange will handle the rest
+  } catch(err){
+    errEl.textContent = err.message || 'Login failed.'
+    btn.disabled=false; btn.textContent='Sign In'
+  }
+}
+
+async function doLogout(){
+  S.realtimeChan && sb.removeChannel(S.realtimeChan)
+  await sb.auth.signOut()
+  S.user=null; S.profile=null; S.event=null
+  renderAuth()
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROFILE FUNCTIONS
+═══════════════════════════════════════════════════════════════ */
+async function loadMyProfile(uid){
+  const { data } = await sb.from('profiles').select('*').eq('id',uid).single()
+  return data
+}
+async function cacheProfile(uid){
+  if(S.allProfiles[uid]) return S.allProfiles[uid]
+  const { data } = await sb.from('profiles').select('*').eq('id',uid).single()
+  if(data) S.allProfiles[uid] = data
+  return data
+}
+async function loadManyProfiles(ids){
+  const missing = ids.filter(id=>!S.allProfiles[id])
+  if(missing.length){
+    const { data } = await sb.from('profiles').select('*').in('id', missing)
+    if(data) data.forEach(p=>{ S.allProfiles[p.id]=p })
+  }
+  return ids.map(id=>S.allProfiles[id]).filter(Boolean)
+}
+
+async function updateMyProfile(data){
+  const { error } = await sb.from('profiles').update(data).eq('id', S.user.id)
+  if(error) throw error
+  Object.assign(S.profile, data)
+  S.allProfiles[S.user.id] = {...S.profile}
+}
+
+async function uploadAvatar(file){
+  const ext = file.name.split('.').pop()
+  const path = `${S.user.id}/avatar.${ext}`
+  const { error: upErr } = await sb.storage.from('avatars').upload(path, file, { upsert:true })
+  if(upErr) throw upErr
+  const { data } = sb.storage.from('avatars').getPublicUrl(path)
+  return data.publicUrl + '?t=' + Date.now()
+}
+
+async function uploadPdf(file, submissionId){
+  const path = `${S.user.id}/${submissionId}/${file.name.replace(/\s+/g,'_')}`
+  const { error } = await sb.storage.from('pdfs').upload(path, file, { upsert:true })
+  if(error) throw error
+  return sb.storage.from('pdfs').getPublicUrl(path).data.publicUrl
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EVENT FUNCTIONS
+═══════════════════════════════════════════════════════════════ */
+async function loadCurrentEvent(){
+  const { data } = await sb.from('events').select('*').eq('status','active').order('created_at',{ascending:false}).limit(1).single()
+  return data
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SUBMISSION FUNCTIONS
+═══════════════════════════════════════════════════════════════ */
+async function loadSubmissions(eventId, filters={}){
+  let q = sb.from('submission_scores').select('*').eq('event_id', eventId)
+  if(filters.category && filters.category !== 'all') q = q.eq('category', filters.category)
+  if(filters.sort === 'top') q = q.order('avg_total', {ascending:false})
+  else if(filters.sort === 'comments') q = q.order('comment_count', {ascending:false})
+  else q = q.order('created_at', {ascending:false})
+  const { data } = await q
+  return data || []
+}
+
+async function loadSubmission(id){
+  const { data } = await sb.from('submission_scores').select('*').eq('id',id).single()
+  return data
+}
+
+async function mySubmission(){
+  if(!S.event) return null
+  const { data } = await sb.from('submissions').select('*').eq('user_id',S.user.id).eq('event_id',S.event.id).maybeSingle()
+  return data
+}
+
+async function upsertSubmission(subData){
+  const existing = await mySubmission()
+  if(existing){
+    const { data, error } = await sb.from('submissions').update(subData).eq('id',existing.id).select().single()
+    if(error) throw error
+    return data
+  } else {
+    const { data, error } = await sb.from('submissions').insert({
+      ...subData, user_id: S.user.id, event_id: S.event.id, status:'submitted'
+    }).select().single()
+    if(error) throw error
+    return data
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RATING FUNCTIONS
+═══════════════════════════════════════════════════════════════ */
+async function loadMyRating(submissionId){
+  const { data } = await sb.from('ratings').select('*')
+    .eq('submission_id', submissionId).eq('rater_id', S.user.id).maybeSingle()
+  return data
+}
+async function loadAllRatings(submissionId){
+  const { data } = await sb.from('ratings').select('*').eq('submission_id', submissionId)
+  return data || []
+}
+async function submitRating(submissionId, creativity, relevance, impact){
+  const { error } = await sb.from('ratings').upsert(
+    { submission_id:submissionId, rater_id:S.user.id, creativity, relevance, impact },
+    { onConflict:'submission_id,rater_id' }
+  )
+  if(error) throw error
+  // Send notification to submission owner
+  const { data:sub } = await sb.from('submissions').select('user_id,title').eq('id',submissionId).single()
+  if(sub && sub.user_id !== S.user.id){
+    await sb.from('notifications').insert({
+      user_id: sub.user_id,
+      type: 'rating',
+      message: `${S.profile.full_name} rated your submission "${sub.title}"`,
+      link: `/submission/${submissionId}`,
+    }).catch(()=>{})
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMMENT FUNCTIONS
+═══════════════════════════════════════════════════════════════ */
+async function loadComments(submissionId){
+  const { data } = await sb.from('comments').select('*')
+    .eq('submission_id', submissionId).eq('is_deleted',false)
+    .order('created_at',{ascending:true})
+  return data || []
+}
+async function postComment(submissionId, body, parentId=null){
+  const { data, error } = await sb.from('comments').insert({
+    submission_id: submissionId, author_id: S.user.id, body, parent_id: parentId||null
+  }).select().single()
+  if(error) throw error
+  // Notify submission owner
+  const { data:sub } = await sb.from('submissions').select('user_id,title').eq('id',submissionId).single()
+  if(sub && sub.user_id !== S.user.id){
+    await sb.from('notifications').insert({
+      user_id: sub.user_id, type:'comment',
+      message: `${S.profile.full_name} commented on "${sub.title}"`,
+      link: `/submission/${submissionId}`,
+    }).catch(()=>{})
+  }
+  return data
+}
+async function deleteComment(id){
+  await sb.from('comments').update({is_deleted:true}).eq('id',id)
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEADERBOARD
+═══════════════════════════════════════════════════════════════ */
+async function loadLeaderboard(eventId){
+  const { data } = await sb.from('submission_scores').select('*')
+    .eq('event_id', eventId).gte('rating_count',3)
+    .order('avg_total',{ascending:false})
+  return data || []
+}
+async function loadAllLeaderboard(eventId){
+  const { data } = await sb.from('submission_scores').select('*')
+    .eq('event_id', eventId).order('avg_total',{ascending:false})
+  return data || []
+}
+async function loadReviewers(){
+  const { data } = await sb.from('reviewer_scores').select('*')
+    .order('total_ratings',{ascending:false})
+  return data || []
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTIFICATIONS
+═══════════════════════════════════════════════════════════════ */
+async function loadNotifications(){
+  const { data } = await sb.from('notifications').select('*')
+    .eq('user_id', S.user.id).order('created_at',{ascending:false}).limit(20)
+  return data || []
+}
+async function markAllRead(){
+  await sb.from('notifications').update({is_read:true})
+    .eq('user_id', S.user.id).eq('is_read',false)
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN FUNCTIONS
+═══════════════════════════════════════════════════════════════ */
+async function loadPendingUsers(){
+  const { data } = await sb.from('profiles').select('*').eq('status','pending').order('created_at')
+  return data || []
+}
+async function approveUser(uid){
+  const { error } = await sb.from('profiles').update({status:'approved'}).eq('id',uid)
+  if(error) throw error
+  await sb.from('notifications').insert({
+    user_id:uid, type:'approved',
+    message:'Your account has been approved! You can now log in to AI Throne.',
+  }).catch(()=>{})
+  toast('User approved','success')
+}
+async function rejectUser(uid){
+  const { error } = await sb.from('profiles').update({status:'rejected'}).eq('id',uid)
+  if(error) throw error
+  toast('User rejected','info')
+}
+async function promoteToAdmin(uid){
+  await sb.from('profiles').update({role:'admin'}).eq('id',uid)
+  toast('User promoted to admin','success')
+}
+async function updateEvent(data){
+  if(!S.event) return
+  const { error } = await sb.from('events').update(data).eq('id', S.event.id)
+  if(error) throw error
+  Object.assign(S.event, data)
+}
+async function createEvent(title, quarterLabel){
+  const { data, error } = await sb.from('events').insert({
+    title, quarter_label: quarterLabel,
+    submission_open: new Date().toISOString(),
+    submission_close: new Date(Date.now()+30*24*60*60*1000).toISOString(),
+    visibility_open: false, status:'active'
+  }).select().single()
+  if(error) throw error
+  S.event = data
+  toast('New event created','success')
+  navigate('feed')
+}
+async function archiveEvent(){
+  await sb.from('events').update({status:'archived'}).eq('id', S.event.id)
+  S.event = await loadCurrentEvent()
+  toast('Event archived','info')
+  navigate('admin')
+}
+async function removeSubmission(id){
+  await sb.from('submissions').update({status:'removed'}).eq('id',id)
+  toast('Submission removed','info')
+}
+async function adminLoadAllSubmissions(){
+  if(!S.event) return []
+  const { data } = await sb.from('submissions').select('*,profiles(full_name,department)')
+    .eq('event_id', S.event.id).neq('status','removed').order('created_at',{ascending:false})
+  return data || []
+}
+async function adminLoadAllUsers(){
+  const { data } = await sb.from('profiles').select('*').order('created_at',{ascending:false})
+  return data || []
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AVATAR HTML helper
+═══════════════════════════════════════════════════════════════ */
+function avaHTML(profile, sizeClass='ava-sm'){
+  if(!profile) return `<div class="ava ${sizeClass}" style="background:var(--bg5)">?</div>`
+  const color = avaColor(profile.full_name)
+  if(profile.avatar_url){
+    return `<div class="ava ${sizeClass}" style="background:${color}"><img src="${escHTML(profile.avatar_url)}" alt="" onerror="this.parentElement.innerHTML='${escHTML(initials(profile.full_name))}'"></div>`
+  }
+  return `<div class="ava ${sizeClass}" style="background:${color}">${escHTML(initials(profile.full_name))}</div>`
+}
+function escHTML(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function timeAgo(d){
+  const s = Math.floor((Date.now()-new Date(d))/1000)
+  if(s<60) return 'just now'
+  if(s<3600) return Math.floor(s/60)+'m ago'
+  if(s<86400) return Math.floor(s/3600)+'h ago'
+  return Math.floor(s/86400)+'d ago'
+}
+function formatDate(d){
+  return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════════ */
+const PAGE_META = {
+  feed:       ['Feed','— Q1 2026'],
+  explore:    ['Explore','— Browse all submissions'],
+  submit:     ['Submit Work','— Q1 2026'],
+  leaderboard:['Leaderboard','— Top Submissions'],
+  reviewers:  ['Reviewer Board','— Most Active Reviewers'],
+  profile:    ['Profile',''],
+  admin:      ['Admin Panel','— Control Centre'],
+  notifications:['Notifications',''],
+}
+function navigate(page, params={}){
+  S.page = page; S.pageParams = params
+  if(S.realtimeChan){ sb.removeChannel(S.realtimeChan); S.realtimeChan=null }
+  updateNavActive()
+  updateTopbar()
+  renderPage()
+}
+function updateNavActive(){
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.page===S.page)
+  })
+}
+function updateTopbar(){
+  const [t,s] = PAGE_META[S.page]||[S.page,'']
+  const tt=document.getElementById('topbar-title')
+  const ts=document.getElementById('topbar-sub')
+  if(tt) tt.textContent=t
+  if(ts) ts.textContent=s
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SHELL RENDER (sidebar + topbar — rendered once)
+═══════════════════════════════════════════════════════════════ */
+function renderShell(){
+  const isAdmin = S.profile?.role === 'admin' || S.profile?.role === 'super_admin'
+  const p = S.profile
+  document.getElementById('app').innerHTML = `
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M4 22L6 10L13 17L14 5L15 17L22 10L24 22H4Z" stroke="#C9A84C" stroke-width="1.5" stroke-linejoin="round" fill="rgba(201,168,76,0.1)"/>
+          <rect x="4" y="22" width="20" height="3" rx="1" fill="rgba(201,168,76,0.2)" stroke="#C9A84C" stroke-width="1"/>
+          <circle cx="14" cy="5" r="2" fill="#C9A84C"/>
+        </svg>
+        <div><div class="logo-text">AI Throne</div><div class="logo-sub">Game District</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <div class="nav-item" data-page="feed" onclick="navigate('feed')">
+          ${navIcon('grid')} Feed
+        </div>
+        <div class="nav-item" data-page="explore" onclick="navigate('explore')">
+          ${navIcon('search')} Explore
+        </div>
+        <div class="nav-item" data-page="submit" onclick="navigate('submit')">
+          ${navIcon('plus')} Submit Work
+          ${S.event && isEventOpen() ? '<span class="nav-badge green">Open</span>' : ''}
+        </div>
+        <div class="nav-section">Competition</div>
+        <div class="nav-item" data-page="leaderboard" onclick="navigate('leaderboard')">
+          ${navIcon('star')} Leaderboard
+        </div>
+        <div class="nav-item" data-page="reviewers" onclick="navigate('reviewers')">
+          ${navIcon('check')} Reviewers
+        </div>
+        <div class="nav-section">You</div>
+        <div class="nav-item" data-page="profile" onclick="navigate('profile',{uid:S.user.id})">
+          ${navIcon('user')} My Profile
+        </div>
+        <div class="nav-item" data-page="notifications" onclick="navigate('notifications')">
+          ${navIcon('bell')} Notifications
+          <span id="notif-badge" class="nav-badge ${S.notifications.filter(n=>!n.is_read).length ? '' : 'hidden'}">${S.notifications.filter(n=>!n.is_read).length}</span>
+        </div>
+        ${isAdmin ? `
+        <div class="nav-section">Admin</div>
+        <div class="nav-item" data-page="admin" onclick="navigate('admin')">
+          ${navIcon('settings')} Admin Panel
+        </div>` : ''}
+      </nav>
+      <div class="sidebar-user" onclick="navigate('profile',{uid:S.user.id})">
+        ${avaHTML(p,'ava-sm')}
+        <div style="flex:1;min-width:0">
+          <div class="user-name" style="font-size:12px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(p?.full_name||'')}</div>
+          <div style="font-size:10px;color:var(--muted)">${escHTML(p?.department||'')}</div>
+        </div>
+        <span class="user-role-badge">${p?.role==='super_admin'?'Super Admin':p?.role==='admin'?'Admin':'Member'}</span>
+      </div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <span class="topbar-title" id="topbar-title">Feed</span>
+          <span class="topbar-sub" id="topbar-sub">— ${escHTML(S.event?.quarter_label||'')}</span>
+        </div>
+        <div class="topbar-right">
+          ${S.event ? `<div class="event-badge">${escHTML(S.event.title)} · ${escHTML(S.event.quarter_label)}</div>` : ''}
+          <button class="icon-btn" onclick="navigate('notifications')" title="Notifications">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a6 6 0 016 6c0 3 1 4.5 1.5 5.5H2.5C3 12.5 4 11 4 8a6 6 0 016-6z"/><path d="M8 16a2 2 0 004 0"/></svg>
+            ${S.notifications.filter(n=>!n.is_read).length ? '<div class="notif-dot"></div>' : ''}
+          </button>
+          <button class="icon-btn" onclick="doLogout()" title="Sign out">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 14l4-4-4-4"/><path d="M17 10H7"/><path d="M7 3H4a1 1 0 00-1 1v12a1 1 0 001 1h3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="content"></div>
+    </div>
+  </div>`
+  updateNavActive()
+}
+
+function navIcon(name){
+  const icons = {
+    grid: '<rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/>',
+    search: '<circle cx="9" cy="9" r="6"/><path d="M15 15l3 3"/>',
+    plus: '<circle cx="10" cy="10" r="7"/><path d="M10 7v6M7 10h6"/>',
+    star: '<path d="M10 2l1.5 4.5H16l-3.7 2.7 1.4 4.4L10 11l-3.7 2.6 1.4-4.4L4 6.5h4.5z"/>',
+    check: '<path d="M9 11a4 4 0 100-8 4 4 0 000 8z"/><path d="M3 18c0-3 2.7-5 6-5"/><path d="M15 12l2 2 4-4"/>',
+    user: '<circle cx="10" cy="7" r="4"/><path d="M2 18c0-4 3.6-7 8-7s8 3 8 7"/>',
+    bell: '<path d="M10 2a6 6 0 016 6c0 3 1 4.5 1.5 5.5H2.5C3 12.5 4 11 4 8a6 6 0 016-6z"/><path d="M8 16a2 2 0 004 0"/>',
+    settings: '<path d="M3 6h14M3 10h14M3 14h14"/><circle cx="7" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="13" cy="10" r="2" fill="currentColor" stroke="none"/><circle cx="7" cy="14" r="2" fill="currentColor" stroke="none"/>',
+  }
+  return `<svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">${icons[name]||''}</svg>`
+}
+function isEventOpen(){
+  if(!S.event) return false
+  const now = Date.now()
+  const open = S.event.submission_open ? new Date(S.event.submission_open).getTime() : 0
+  const close = S.event.submission_close ? new Date(S.event.submission_close).getTime() : Infinity
+  return now >= open && now <= close
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: FEED
+═══════════════════════════════════════════════════════════════ */
+async function renderFeed(){
+  const c = document.getElementById('content')
+  c.innerHTML = loadingHTML()
+  if(!S.event){ c.innerHTML = '<div class="page"><div class="empty"><h4>No active event</h4><p>Ask an admin to create a new quarterly event.</p></div></div>'; return }
+
+  const [subs, reviewers] = await Promise.all([
+    loadSubmissions(S.event.id, {sort:S.sortBy}),
+    loadReviewers()
+  ])
+  const userIds = [...new Set(subs.map(s=>s.user_id))]
+  await loadManyProfiles(userIds)
+  const revUserIds = reviewers.slice(0,5).map(r=>r.user_id)
+  await loadManyProfiles(revUserIds)
+  const lb = [...subs].sort((a,b)=>b.avg_total-a.avg_total).slice(0,5)
+  const myRatings = new Set()
+  if(subs.length){
+    const {data:rr} = await sb.from('ratings').select('submission_id').eq('rater_id',S.user.id)
+    if(rr) rr.forEach(r=>myRatings.add(r.submission_id))
+  }
+  const ann = S.event.announcement
+  c.innerHTML = `
+  <div class="page-2col">
+    <div class="page-main">
+      ${ann ? `<div class="announcement-bar"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 4l-10 6 10 6V4z"/><path d="M3 7h5v6H3z"/></svg>${escHTML(ann)}</div>` : ''}
+      ${isEventOpen() ? `
+      <div class="submit-cta" onclick="navigate('submit')">
+        <div class="submit-cta-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#C9A84C" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M10 7v6M7 10h6"/></svg></div>
+        <div><h4>Submit your AI project</h4><p>Deadline: ${S.event.submission_close ? formatDate(S.event.submission_close) : 'Open'} · PDF + Video + Demo required</p></div>
+        <button class="btn-primary" style="white-space:nowrap;padding:9px 16px;width:auto">Submit →</button>
+      </div>` : ''}
+      <div class="chip-bar" id="feed-cat-bar">
+        ${['all','UA','Engineering','QA','Creative','Product','Finance','Ops','HR','Marketing','Data','Others'].map(c=>`
+        <div class="chip ${S.filterCat===c?'active':''}" onclick="setCatFilter('${c}','feed')">${c==='all'?'All Depts':c}</div>`).join('')}
+      </div>
+      <div class="cards-grid" id="feed-grid">
+        ${subs.filter(s=>S.filterCat==='all'||s.category===S.filterCat).map(s=>subCardHTML(s,myRatings.has(s.id))).join('')}
+        ${subs.filter(s=>S.filterCat==='all'||s.category===S.filterCat).length===0?'<div class="empty" style="grid-column:1/-1"><h4>No submissions yet</h4></div>':''}
+      </div>
+    </div>
+    <div class="right-col">
+      ${timerWidgetHTML()}
+      <div class="widget">
+        <div class="card-hdr"><span class="card-hdr-title">Top Submissions</span><span class="link-text" onclick="navigate('leaderboard')">View all →</span></div>
+        ${lb.map((s,i)=>lbRowHTML(s,i,'sub')).join('')}
+        ${lb.length===0?'<div class="empty" style="padding:16px"><h4 style="font-size:12px">No rated submissions yet</h4></div>':''}
+      </div>
+      <div class="widget">
+        <div class="card-hdr"><span class="card-hdr-title">Top Reviewers</span><span class="link-text" onclick="navigate('reviewers')">View all →</span></div>
+        ${reviewers.slice(0,5).map((r,i)=>{
+          const p = S.allProfiles[r.user_id]
+          return `<div class="lb-row">
+            <div class="lb-rank ${i===0?'r1':i===1?'r2':i===2?'r3':'r-rest'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+            ${avaHTML(p,'ava-xs')}
+            <div class="lb-meta"><div class="lb-name">${escHTML(p?.full_name||'Unknown')}</div><div class="lb-sub">${escHTML(p?.department||'')} · ${r.total_ratings} ratings</div></div>
+            <div class="lb-score">${r.total_ratings}</div>
+          </div>`
+        }).join('')}
+        ${reviewers.length===0?'<div class="empty" style="padding:16px"><h4 style="font-size:12px">No reviews yet</h4></div>':''}
+      </div>
+    </div>
+  </div>`
+}
+
+function subCardHTML(sub, isMyRated){
+  const profile = S.allProfiles[sub.user_id]
+  const dc = deptColor(sub.category)
+  const total = sub.avg_total || 0
+  const isOwn = sub.user_id === S.user.id
+  return `<div class="sub-card" onclick="openSubmissionModal('${sub.id}')">
+    <div class="card-thumb">
+      <div class="card-thumb-text">${escHTML(sub.title)}</div>
+      <div class="card-thumb-overlay"></div>
+      <div class="dept-tag" style="background:${deptBg(sub.category)};color:${dc};border:1px solid ${deptBorder(sub.category)}">${escHTML(sub.category)}</div>
+      ${isMyRated?'<div class="rated-badge">✓ Rated</div>':''}
+    </div>
+    <div class="card-body">
+      <div class="card-author">
+        ${avaHTML(profile,'ava-sm')}
+        <span class="card-author-name">${escHTML(profile?.full_name||'Unknown')}</span>
+        ${isOwn?'<span style="margin-left:auto;font-size:10px;font-family:Syne,sans-serif;font-weight:600;color:var(--gold)">You</span>':''}
+      </div>
+      <div class="card-title">${escHTML(sub.title)}</div>
+      <div class="card-summary">${escHTML(sub.summary||'')}</div>
+    </div>
+    <div class="card-footer">
+      <div class="score-disp">
+        <span class="score-num">${total > 0 ? total : '—'}</span>
+        ${total>0?'<span class="score-max">/30</span>':''}
+        ${sub.rating_count>0?`<span class="score-count">(${sub.rating_count})</span>`:''}
+      </div>
+      <div class="card-stat">
+        <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 10a8 8 0 01-8 8H4l-2 2V10a8 8 0 0116 0z"/></svg>
+        ${sub.comment_count||0}
+      </div>
+      ${!isOwn?`<button class="rate-btn ${isMyRated?'rated':''}" onclick="event.stopPropagation();openSubmissionModal('${sub.id}')">${isMyRated?'✓ Rated':'Rate'}</button>`:''}
+    </div>
+  </div>`
+}
+
+function timerWidgetHTML(){
+  if(!S.event?.submission_close) return ''
+  const close = new Date(S.event.submission_close)
+  const diff = close - Date.now()
+  if(diff<=0) return `<div class="timer-widget"><div class="timer-lbl">Submission Window</div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--coral)">Submissions Closed</div></div>`
+  const days = Math.floor(diff/86400000)
+  const hrs  = Math.floor((diff%86400000)/3600000)
+  const mins = Math.floor((diff%3600000)/60000)
+  return `<div class="timer-widget">
+    <div class="timer-lbl">Submission Window</div>
+    <div class="timer-title">${escHTML(S.event.title)} ${escHTML(S.event.quarter_label)}</div>
+    <div class="timer-nums">
+      <div class="timer-unit"><div class="timer-n">${days}</div><div class="timer-u">Days</div></div>
+      <div class="timer-unit"><div class="timer-n">${String(hrs).padStart(2,'0')}</div><div class="timer-u">Hrs</div></div>
+      <div class="timer-unit"><div class="timer-n">${String(mins).padStart(2,'0')}</div><div class="timer-u">Min</div></div>
+    </div>
+  </div>`
+}
+
+function lbRowHTML(sub, i, type){
+  const profile = S.allProfiles[sub.user_id]
+  const score = type==='sub' ? sub.avg_total : sub.total_ratings
+  const ranks = ['r1','r2','r3','r-rest','r-rest']
+  const medals = ['🥇','🥈','🥉']
+  return `<div class="lb-row" onclick="${type==='sub'?`openSubmissionModal('${sub.id}')`:'' }">
+    <div class="lb-rank ${ranks[i]||'r-rest'}">${i<3?medals[i]:i+1}</div>
+    ${avaHTML(profile,'ava-xs')}
+    <div class="lb-meta">
+      <div class="lb-name">${type==='sub'?escHTML(sub.title):escHTML(profile?.full_name||'Unknown')}</div>
+      <div class="lb-sub">${escHTML(profile?.full_name||'')}${type==='sub'?' · '+escHTML(sub.category):'· '+escHTML(profile?.department||'')}</div>
+    </div>
+    <div class="lb-score">${score||0}</div>
+  </div>`
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CAT FILTER
+═══════════════════════════════════════════════════════════════ */
+function setCatFilter(cat, page){
+  S.filterCat = cat
+  if(page==='feed') renderPage()
+  else if(page==='explore') renderPage()
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: EXPLORE
+═══════════════════════════════════════════════════════════════ */
+async function renderExplore(){
+  const c = document.getElementById('content')
+  c.innerHTML = loadingHTML()
+  if(!S.event){ c.innerHTML='<div class="page"><div class="empty"><h4>No active event</h4></div></div>'; return }
+  const subs = await loadSubmissions(S.event.id, {category:S.filterCat, sort:S.sortBy})
+  const userIds = [...new Set(subs.map(s=>s.user_id))]
+  await loadManyProfiles(userIds)
+  const myRatings = new Set()
+  if(subs.length){
+    const {data:rr} = await sb.from('ratings').select('submission_id').eq('rater_id',S.user.id)
+    if(rr) rr.forEach(r=>myRatings.add(r.submission_id))
+  }
+  let filtered = subs
+  if(S.notRatedOnly) filtered = filtered.filter(s=>!myRatings.has(s.id)&&s.user_id!==S.user.id)
+
+  c.innerHTML = `<div class="page">
+    <div class="page-hdr"><h2>Explore Submissions</h2><p>Browse, filter, and rate all submissions for ${escHTML(S.event.quarter_label)}</p></div>
+    <div class="chip-bar" style="margin-bottom:10px">
+      ${['all','UA','Engineering','QA','Creative','Product','Finance','Ops','HR','Marketing','Data','Others'].map(cat=>`
+      <div class="chip ${S.filterCat===cat?'active':''}" onclick="setCatFilter('${cat}','explore')">${cat==='all'?'All':cat}</div>`).join('')}
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--muted)">Sort:</span>
+      ${[['top','Top Rated'],['comments','Most Commented'],['new','Newest']].map(([v,l])=>`
+      <div class="sort-chip ${S.sortBy===v?'active':''}" onclick="S.sortBy='${v}';renderPage()">${l}</div>`).join('')}
+      <button class="not-rated-btn ${S.notRatedOnly?'active':''}" onclick="S.notRatedOnly=!S.notRatedOnly;renderPage()">✦ Not Rated by Me</button>
+      <span style="margin-left:auto;font-size:12px;color:var(--muted)">${filtered.length} submission${filtered.length!==1?'s':''}</span>
+    </div>
+    <div class="cards-grid">
+      ${filtered.map(s=>subCardHTML(s,myRatings.has(s.id))).join('')}
+      ${filtered.length===0?'<div class="empty" style="grid-column:1/-1"><h4>No submissions match this filter</h4><p>Try a different category or turn off the "Not Rated" filter</p></div>':''}
+    </div>
+  </div>`
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SUBMISSION MODAL
+═══════════════════════════════════════════════════════════════ */
+let modalSub = null, modalMyRating = null, modalComments = []
+
+async function openSubmissionModal(subId){
+  S.openModal = subId
+  const overlay = document.getElementById('modal-overlay')
+  const left = document.getElementById('modal-left')
+  const right = document.getElementById('modal-right')
+  left.innerHTML = loadingHTML()
+  right.innerHTML = ''
+  overlay.classList.add('open')
+  document.body.style.overflow='hidden'
+
+  const [sub, myRating, comments] = await Promise.all([
+    loadSubmission(subId),
+    loadMyRating(subId),
+    loadComments(subId),
+  ])
+  if(!sub){ left.innerHTML='<div class="empty"><h4>Submission not found</h4></div>'; return }
+  modalSub = sub; modalMyRating = myRating; modalComments = comments
+  const profile = await cacheProfile(sub.user_id)
+  const commentAuthors = [...new Set(comments.map(c=>c.author_id))]
+  await loadManyProfiles(commentAuthors)
+  const isOwn = sub.user_id === S.user.id
+  const dc = deptColor(sub.category)
+
+  left.innerHTML = `
+    <div class="modal-hdr">
+      <div style="flex:1">
+        <div class="modal-title">${escHTML(sub.title)}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
+          ${avaHTML(profile,'ava-xs')}
+          <span style="font-size:12px;color:var(--muted2)">${escHTML(profile?.full_name||'Unknown')}</span>
+          <span class="tag" style="background:${deptBg(sub.category)};color:${dc}">${escHTML(sub.category)}</span>
+          <span style="font-size:11px;color:var(--muted)">${timeAgo(sub.created_at)}</span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-sec">
+      <div class="sec-lbl">Pitch Document</div>
+      <div class="pdf-box">
+        <div class="pdf-box-bg">PDF</div>
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" style="position:relative;z-index:1"><rect x="8" y="4" width="24" height="32" rx="3" fill="rgba(232,99,74,0.15)" stroke="#E8634A" stroke-width="1.5"/><path d="M16 16h8M16 21h8M16 26h5" stroke="#E8634A" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div style="position:relative;z-index:1;font-size:13px;font-weight:500;color:var(--white)">${escHTML(sub.title)}.pdf</div>
+        ${sub.pdf_url ? `<a href="${escHTML(sub.pdf_url)}" target="_blank" class="pdf-open-btn">Open PDF →</a>` : '<div style="font-size:11px;color:var(--muted);position:relative;z-index:1">No PDF uploaded</div>'}
+      </div>
+    </div>
+    ${sub.video_link ? `<div class="modal-sec">
+      <div class="sec-lbl">Demo Video</div>
+      <div class="video-row" onclick="window.open('${escHTML(sub.video_link)}','_blank')">
+        <div class="play-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="#C9A84C"><polygon points="2,1 11,6 2,11"/></svg></div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--white)">Watch 5-minute demo</div><div style="font-size:11px;color:var(--muted)">Click to open in new tab</div></div>
+      </div>
+    </div>` : ''}
+    ${sub.demo_link ? `<div class="modal-sec">
+      <div class="sec-lbl">Live Demo / Output</div>
+      <a href="${escHTML(sub.demo_link)}" target="_blank" class="demo-link-btn">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 6H6a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2v-4"/><path d="M14 2h4v4"/><path d="M10 10L18 2"/></svg>
+        Open ${escHTML(sub.demo_type||'Demo')} →
+      </a>
+    </div>` : ''}
+    ${sub.summary ? `<div class="modal-sec"><div class="sec-lbl">Summary</div><p style="font-size:13px;color:var(--muted2);line-height:1.7">${escHTML(sub.summary)}</p></div>` : ''}`
+
+  renderModalRight(sub, myRating, comments, isOwn)
+
+  // Subscribe to realtime comments
+  S.realtimeChan = sb.channel(`comments-${subId}`)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'comments',filter:`submission_id=eq.${subId}`},
+      async(payload)=>{
+        const nc = payload.new
+        if(nc.is_deleted) return
+        await cacheProfile(nc.author_id)
+        modalComments.push(nc)
+        const ca = document.getElementById('comments-area')
+        if(ca) ca.innerHTML = commentsHTML(modalComments)
+      })
+    .subscribe()
+}
+
+function renderModalRight(sub, myRating, comments, isOwn){
+  const right = document.getElementById('modal-right')
+  const c = sub.avg_creativity||0, r = sub.avg_relevance||0, i = sub.avg_impact||0
+  const mc = myRating?.creativity||5, mr=myRating?.relevance||5, mi=myRating?.impact||5
+  right.innerHTML = `
+    <div class="agg-section">
+      <div class="agg-big">
+        <span class="agg-num">${sub.avg_total||'—'}</span>
+        <span class="agg-sub">/30 · ${sub.rating_count||0} rater${sub.rating_count!==1?'s':''}</span>
+        ${sub.avg_total>=25?'<span style="margin-left:auto;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:var(--gold);font-family:Syne,sans-serif;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px">TOP</span>':''}
+      </div>
+      ${[['Creativity',c],['Relevance',r],['Impact',i]].map(([lbl,val])=>`
+      <div class="agg-bar-row">
+        <span class="agg-bar-lbl">${lbl}</span>
+        <div class="agg-bar-wrap"><div class="agg-bar" style="width:${(val/10)*100}%"></div></div>
+        <span class="agg-bar-val">${val||0}</span>
+      </div>`).join('')}
+    </div>
+    <div class="rating-panel">
+      <div class="rating-panel-title">${myRating?'Your Rating':'Rate This Submission'}</div>
+      ${isOwn ? '<div style="text-align:center;padding:8px;font-size:12px;color:var(--muted)">🚫 You cannot rate your own submission</div>' : `
+      ${[['Creativity','c',mc],['Problem Relevance','r',mr],['Impact','i',mi]].map(([lbl,key,val])=>`
+      <div class="criteria-row">
+        <div class="criteria-lbl"><span>${lbl}</span><span class="criteria-val" id="rval-${key}">${val}</span></div>
+        <input type="range" min="1" max="10" value="${val}" id="rslider-${key}" ${myRating?'disabled':''} oninput="updateRatingTotal()">
+      </div>`).join('')}
+      <div class="total-row">
+        <span style="font-size:12px;color:var(--muted2)">Total score</span>
+        <span class="total-val" id="rating-total">${mc+mr+mi}<span style="font-size:12px;color:var(--gold-d)">/30</span></span>
+      </div>
+      <button class="submit-rating-btn ${myRating?'rated':''}" id="rate-submit-btn" onclick="handleRatingSubmit('${sub.id}')">
+        ${myRating ? '✓ Update Rating' : 'Submit Rating'}
+      </button>`}
+    </div>
+    <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);padding:8px 16px 0">Comments (${comments.length})</div>
+    <div class="comments-area" id="comments-area">${commentsHTML(comments)}</div>
+    <div class="comment-input-row">
+      <textarea class="comment-textarea" id="comment-input" placeholder="Add a comment..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handleCommentPost('${sub.id}')}"></textarea>
+      <button class="comment-send" onclick="handleCommentPost('${sub.id}')">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#000" stroke-width="2"><path d="M18 2L10 10M18 2l-5 16-3-7-7-3 16-6z"/></svg>
+      </button>
+    </div>`
+}
+
+function commentsHTML(comments){
+  if(!comments.length) return '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">No comments yet. Be the first!</div>'
+  const top = comments.filter(c=>!c.parent_id)
+  const replies = {}
+  comments.filter(c=>c.parent_id).forEach(c=>{ (replies[c.parent_id]||(replies[c.parent_id]=[])).push(c) })
+  return top.map(c=>{
+    const p = S.allProfiles[c.author_id]
+    const isMe = c.author_id === S.user.id
+    const rr = (replies[c.id]||[]).map(r=>{
+      const rp = S.allProfiles[r.author_id]
+      return `<div class="comment-reply">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">${avaHTML(rp,'ava-xs')}<span style="font-size:11px;font-weight:500;color:var(--white)">${escHTML(rp?.full_name||'Unknown')}</span><span style="font-size:10px;color:var(--muted)">${timeAgo(r.created_at)}</span></div>
+        <div style="font-size:12px;color:var(--muted2);line-height:1.5">${escHTML(r.body)}</div>
+      </div>`
+    }).join('')
+    return `<div class="comment-item" data-id="${c.id}">
+      <div class="comment-top">${avaHTML(p,'ava-sm')}<span class="comment-author">${escHTML(p?.full_name||'Unknown')}</span><span class="comment-time">${timeAgo(c.created_at)}</span>${isMe?`<button onclick="handleDeleteComment('${c.id}')" style="margin-left:auto;background:none;border:none;font-size:10px;color:var(--muted);cursor:pointer">Delete</button>`:''}
+      </div>
+      <div class="comment-body">${escHTML(c.body)}</div>
+      <button class="comment-reply-btn" onclick="focusReply('${c.id}')">Reply</button>
+      ${rr}
+    </div>`
+  }).join('')
+}
+
+function updateRatingTotal(){
+  const c = parseInt(document.getElementById('rslider-c')?.value||5)
+  const r = parseInt(document.getElementById('rslider-r')?.value||5)
+  const i = parseInt(document.getElementById('rslider-i')?.value||5)
+  if(document.getElementById('rval-c')) document.getElementById('rval-c').textContent=c
+  if(document.getElementById('rval-r')) document.getElementById('rval-r').textContent=r
+  if(document.getElementById('rval-i')) document.getElementById('rval-i').textContent=i
+  if(document.getElementById('rating-total')) document.getElementById('rating-total').innerHTML=`${c+r+i}<span style="font-size:12px;color:var(--gold-d)">/30</span>`
+}
+
+async function handleRatingSubmit(subId){
+  const btn = document.getElementById('rate-submit-btn')
+  if(!btn) return
+  const c = parseInt(document.getElementById('rslider-c')?.value||5)
+  const r = parseInt(document.getElementById('rslider-r')?.value||5)
+  const i = parseInt(document.getElementById('rslider-i')?.value||5)
+  btn.disabled=true; btn.textContent='Saving...'
+  try {
+    await submitRating(subId, c, r, i)
+    toast('Rating submitted!','success')
+    // Refresh agg scores
+    const updated = await loadSubmission(subId)
+    if(updated){
+      modalSub = updated
+      document.querySelector('.agg-num').textContent = updated.avg_total||'—'
+      document.querySelector('.agg-sub').textContent = `/30 · ${updated.rating_count||0} raters`
+      ;[['Creativity',updated.avg_creativity||0],['Relevance',updated.avg_relevance||0],['Impact',updated.avg_impact||0]].forEach(([lbl,val],idx)=>{
+        const bars = document.querySelectorAll('.agg-bar')
+        const vals = document.querySelectorAll('.agg-bar-val')
+        if(bars[idx]) bars[idx].style.width=(val/10*100)+'%'
+        if(vals[idx]) vals[idx].textContent=val
+      })
+    }
+    btn.textContent='✓ Rated'; btn.classList.add('rated'); btn.disabled=false
+  } catch(err){
+    toast(err.message||'Rating failed','error'); btn.disabled=false; btn.textContent='Submit Rating'
+  }
+}
+
+let replyToId = null
+function focusReply(commentId){
+  replyToId = commentId
+  const inp = document.getElementById('comment-input')
+  if(inp){ inp.placeholder='Replying...'; inp.focus() }
+}
+
+async function handleCommentPost(subId){
+  const inp = document.getElementById('comment-input')
+  const body = inp?.value?.trim()
+  if(!body) return
+  inp.value=''
+  try {
+    const nc = await postComment(subId, body, replyToId)
+    if(nc){
+      await cacheProfile(nc.author_id)
+      if(!replyToId) modalComments.push(nc)
+      else {
+        const existing = modalComments.find(c=>c.id===replyToId)
+        if(!existing) modalComments.push(nc)
+        else modalComments.push(nc)
+      }
+    }
+    replyToId = null
+    inp.placeholder='Add a comment...'
+    const ca = document.getElementById('comments-area')
+    if(ca) ca.innerHTML = commentsHTML(modalComments)
+  } catch(err){ toast(err.message||'Comment failed','error') }
+}
+
+async function handleDeleteComment(id){
+  if(!confirm('Delete this comment?')) return
+  await deleteComment(id)
+  modalComments = modalComments.filter(c=>c.id!==id)
+  const ca = document.getElementById('comments-area')
+  if(ca) ca.innerHTML = commentsHTML(modalComments)
+}
+
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open')
+  document.body.style.overflow=''
+  S.openModal=null
+  if(S.realtimeChan){ sb.removeChannel(S.realtimeChan); S.realtimeChan=null }
+}
+function handleOverlayClick(e){
+  if(e.target.id==='modal-overlay') closeModal()
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: LEADERBOARD
+═══════════════════════════════════════════════════════════════ */
+async function renderLeaderboard(){
+  const c = document.getElementById('content')
+  c.innerHTML = loadingHTML()
+  if(!S.event){ c.innerHTML='<div class="page"><div class="empty"><h4>No active event</h4></div></div>'; return }
+  const subs = await loadAllLeaderboard(S.event.id)
+  const ids = subs.map(s=>s.user_id)
+  await loadManyProfiles(ids)
+
+  c.innerHTML=`<div class="page">
+    <div class="page-hdr"><h2>Submission Leaderboard</h2><p>Q1 2026 · Scored out of 30 (Creativity + Relevance + Impact) · Min. 3 ratings to qualify</p></div>
+    <div class="card" style="overflow:hidden">
+      <div class="card-hdr" style="background:rgba(201,168,76,0.05)">
+        <span class="card-hdr-title">All Submissions — ${escHTML(S.event.quarter_label)}</span>
+        <span style="font-size:11px;color:var(--muted)">${subs.length} submissions</span>
+      </div>
+      ${subs.length===0?'<div class="empty"><h4>No submissions yet</h4></div>':subs.map((sub,i)=>{
+        const p = S.allProfiles[sub.user_id]
+        const isMe = sub.user_id===S.user.id
+        const qualified = sub.rating_count>=3
+        const medals=['🥇','🥈','🥉']
+        const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'r-rest'
+        return `<div class="lb-full-row ${isMe?'mine':''}" onclick="openSubmissionModal('${sub.id}')">
+          <div class="lb-full-rank ${rankClass}">${i<3?medals[i]:i+1}</div>
+          ${avaHTML(p,'ava-sm')}
+          <div class="lb-full-info">
+            <div class="lb-full-name">${escHTML(sub.title)} ${isMe?'<span style="font-size:10px;font-family:Syne,sans-serif;background:rgba(201,168,76,0.12);color:var(--gold);padding:2px 6px;border-radius:4px;margin-left:4px">You</span>':''}</div>
+            <div class="lb-full-dept">${escHTML(p?.full_name||'Unknown')} · <span style="color:${deptColor(sub.category)}">${escHTML(sub.category)}</span> · ${sub.rating_count} rater${sub.rating_count!==1?'s':''} ${!qualified?'<span style="color:var(--muted);font-size:10px">(needs 3+ ratings)</span>':''}</div>
+          </div>
+          <div>
+            <div class="lb-full-score">${qualified?sub.avg_total:'—'}</div>
+            <div class="lb-full-sub">${qualified?`C:${sub.avg_creativity} R:${sub.avg_relevance} I:${sub.avg_impact}`:''}</div>
+          </div>
+        </div>`
+      }).join('')}
+    </div>
+  </div>`
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: REVIEWERS
+═══════════════════════════════════════════════════════════════ */
+async function renderReviewers(){
+  const c = document.getElementById('content')
+  c.innerHTML=loadingHTML()
+  const reviewers = await loadReviewers()
+  const ids = reviewers.map(r=>r.user_id)
+  await loadManyProfiles(ids)
+  const myEntry = reviewers.find(r=>r.user_id===S.user.id)
+  const myRank = reviewers.findIndex(r=>r.user_id===S.user.id)+1
+
+  c.innerHTML=`<div class="page">
+    <div class="page-hdr"><h2>Reviewer Leaderboard</h2><p>Every rating = 1 point. Review more submissions to climb the board!</p></div>
+    ${myEntry?`<div style="background:rgba(38,181,164,0.06);border:1px solid rgba(38,181,164,0.2);border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#26B5A4" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <div><div style="font-size:13px;font-weight:500;color:var(--white)">Your Progress</div><div style="font-size:12px;color:var(--muted)">You've given <strong style="color:var(--teal)">${myEntry.total_ratings} ratings</strong> across <strong style="color:var(--teal)">${myEntry.unique_submissions} submissions</strong> · You're ranked <strong style="color:var(--gold)">#${myRank}</strong></div></div>
+      <button class="not-rated-btn" style="margin-left:auto" onclick="S.notRatedOnly=true;navigate('explore')">Review more →</button>
+    </div>`:'' }
+    <div class="card" style="overflow:hidden">
+      <div class="card-hdr"><span class="card-hdr-title">Most Active Reviewers</span></div>
+      ${reviewers.length===0?'<div class="empty"><h4>No reviews yet</h4><p>Be the first to rate a submission!</p></div>':reviewers.map((r,i)=>{
+        const p = S.allProfiles[r.user_id]
+        const isMe = r.user_id===S.user.id
+        const medals=['🥇','🥈','🥉']
+        const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'r-rest'
+        return `<div class="lb-full-row ${isMe?'mine':''}">
+          <div class="lb-full-rank ${rankClass}">${i<3?medals[i]:i+1}</div>
+          ${avaHTML(p,'ava-sm')}
+          <div class="lb-full-info">
+            <div class="lb-full-name">${escHTML(p?.full_name||'Unknown')} ${isMe?'<span style="font-size:10px;font-family:Syne,sans-serif;background:rgba(201,168,76,0.12);color:var(--gold);padding:2px 6px;border-radius:4px;margin-left:4px">You</span>':''}</div>
+            <div class="lb-full-dept">${escHTML(p?.department||'')} · ${r.unique_submissions} submissions reviewed</div>
+          </div>
+          <div><div class="lb-full-score">${r.total_ratings}</div><div class="lb-full-sub">pts</div></div>
+        </div>`
+      }).join('')}
+    </div>
+  </div>`
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: SUBMIT WIZARD
+═══════════════════════════════════════════════════════════════ */
+async function renderSubmit(){
+  const c = document.getElementById('content')
+  // Check if user already has a submission
+  const existing = await mySubmission()
+  if(existing) S.wizardData = existing
+  else S.wizardData = {}
+  S.wizardStep = 0
+  renderWizardStep()
+}
+
+function renderWizardStep(){
+  const c = document.getElementById('content')
+  const stepLabels=['Info','Document','Video','Demo']
+  const stepsHTML = stepLabels.map((l,i)=>`
+    <div class="wstep-item">
+      <div class="wdot ${i<S.wizardStep?'done':i===S.wizardStep?'active':''}">${i<S.wizardStep?'✓':i+1}</div>
+      <div class="wlbl ${i<S.wizardStep?'done':i===S.wizardStep?'active':''}">${l}</div>
+    </div>`).join('')
+
+  const isOpen = isEventOpen()
+  const existing = S.wizardData?.id
+
+  if(!S.event || !isOpen){
+    c.innerHTML=`<div class="page"><div class="wizard-wrap">
+      <div class="card" style="padding:32px;text-align:center">
+        <div style="font-size:40px;margin-bottom:12px">🔒</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px">Submissions ${!S.event?'Not Available':(new Date(S.event.submission_open)>new Date()?'Not Open Yet':'Closed')}</h3>
+        <p style="font-size:13px;color:var(--muted)">
+          ${!S.event?'No active event found.':new Date(S.event.submission_open)>new Date()?`Submissions open on ${formatDate(S.event.submission_open)}`:`Submissions closed on ${formatDate(S.event.submission_close)}`}
+        </p>
+      </div>
+    </div></div>`
+    return
+  }
+
+  c.innerHTML = `<div class="page"><div class="wizard-wrap">
+    <div class="page-hdr">
+      <h2>${existing?'Edit Your Submission':'Submit Your Work'}</h2>
+      <p>${existing?'Update your entry for':'Submit your AI project for'} ${escHTML(S.event.quarter_label)}</p>
+    </div>
+    <div class="wizard-steps">${stepsHTML}</div>
+    <div id="wizard-step-content"></div>
+  </div></div>`
+  renderWizardStepContent()
+}
+
+function renderWizardStepContent(){
+  const sc = document.getElementById('wizard-step-content')
+  const d = S.wizardData
+  if(S.wizardStep===0){
+    sc.innerHTML=`<div class="wizard-card">
+      <h3>Project Information</h3>
+      <p>Give your project a clear title, select its department, and write a 2–3 sentence summary explaining the problem, the AI approach, and expected impact.</p>
+      <div class="field"><label>Project Title *</label><input id="w-title" value="${escHTML(d.title||'')}" placeholder="e.g. Ad Performance Predictor using LLM"></div>
+      <div class="field mt12"><label>Department / Category *</label>
+        <select id="w-cat">
+          ${['UA','Engineering','QA','Creative','Product','Finance','Ops','HR','Marketing','Data','Others'].map(o=>`<option value="${o}" ${d.category===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field mt12"><label>Summary (2–3 sentences) *</label><textarea id="w-summary" placeholder="What problem, how AI is used, expected impact...">${escHTML(d.summary||'')}</textarea></div>
+      <div class="wizard-nav"><button class="btn-primary" style="width:auto;padding:10px 24px" onclick="wizardNext(1)">Next: Upload Document →</button></div>
+    </div>`
+  } else if(S.wizardStep===1){
+    sc.innerHTML=`<div class="wizard-card">
+      <h3>Upload Pitch Document</h3>
+      <p>Upload your PDF pitch (max 20MB). It must cover: What problem, How AI solves it, and Expected impact.</p>
+      <div class="upload-zone ${d.pdf_url?'upload-success':''}" id="pdf-upload-zone">
+        <input type="file" accept="application/pdf" onchange="handlePdfSelect(this)">
+        <div style="font-size:28px;margin-bottom:8px">📄</div>
+        <h5 id="pdf-upload-label">${d.pdf_url ? '✓ PDF already uploaded — upload new to replace' : 'Click to upload PDF'}</h5>
+        <p>PDF only · Max 20MB</p>
+      </div>
+      <div id="pdf-upload-status" class="hidden" style="font-size:12px;color:var(--teal);margin-top:8px;text-align:center"></div>
+      <div class="wizard-nav mt16">
+        <button class="btn-secondary" onclick="wizardBack(0)">← Back</button>
+        <button class="btn-primary" style="width:auto;padding:10px 24px" onclick="wizardNext(2)">Next: Add Video →</button>
+      </div>
+    </div>`
+  } else if(S.wizardStep===2){
+    sc.innerHTML=`<div class="wizard-card">
+      <h3>Add Demo Video</h3>
+      <p>Paste a link to your 5-minute demo video. Supports YouTube, Google Drive, Loom, or any direct video URL.</p>
+      <div class="field"><label>Video Link *</label><input id="w-video" type="url" value="${escHTML(d.video_link||'')}" placeholder="https://www.youtube.com/watch?v=..."></div>
+      <div class="wizard-nav mt16">
+        <button class="btn-secondary" onclick="wizardBack(1)">← Back</button>
+        <button class="btn-primary" style="width:auto;padding:10px 24px" onclick="wizardNext(3)">Next: Add Demo →</button>
+      </div>
+    </div>`
+  } else if(S.wizardStep===3){
+    sc.innerHTML=`<div class="wizard-card">
+      <h3>Add Demo / Live Output</h3>
+      <p>Provide a link to your actual working demo, tool, or output. This is required — it proves your solution works.</p>
+      <div class="field"><label>Demo Type</label>
+        <select id="w-demo-type">
+          ${['Live URL (deployed app / tool)','GitHub Repository','Google Drive file / folder','Other link'].map(o=>`<option ${(d.demo_type||''===o)?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field mt12"><label>Demo Link *</label><input id="w-demo" type="url" value="${escHTML(d.demo_link||'')}" placeholder="https://..."></div>
+      <div class="wizard-nav mt16">
+        <button class="btn-secondary" onclick="wizardBack(2)">← Back</button>
+        <button class="btn-primary" style="width:auto;padding:10px 24px;background:var(--teal)" onclick="handleWizardSubmit()">
+          ${d.id ? '💾 Save Changes' : '🚀 Submit Entry'}
+        </button>
+      </div>
+    </div>`
+  }
+}
+
+function wizardNext(step){
+  // Validate current step
+  if(S.wizardStep===0){
+    const title = document.getElementById('w-title')?.value?.trim()
+    const cat   = document.getElementById('w-cat')?.value
+    const summ  = document.getElementById('w-summary')?.value?.trim()
+    if(!title){ toast('Please enter a project title','error'); return }
+    if(!cat)  { toast('Please select a department','error'); return }
+    if(!summ) { toast('Please write a summary','error'); return }
+    S.wizardData.title=title; S.wizardData.category=cat; S.wizardData.summary=summ
+  }
+  if(S.wizardStep===2){
+    const v = document.getElementById('w-video')?.value?.trim()
+    S.wizardData.video_link = v||null
+  }
+  S.wizardStep = step
+  renderWizardStepContent()
+}
+function wizardBack(step){ S.wizardStep=step; renderWizardStepContent() }
+
+let pendingPdfFile = null
+async function handlePdfSelect(input){
+  const file = input.files[0]
+  if(!file) return
+  if(file.size > 20*1024*1024){ toast('PDF too large (max 20MB)','error'); return }
+  pendingPdfFile = file
+  document.getElementById('pdf-upload-label').textContent = `✓ ${file.name} selected`
+  document.getElementById('pdf-upload-zone').classList.add('upload-success')
+}
+
+async function handleWizardSubmit(){
+  const btn = document.querySelector('.btn-primary[onclick="handleWizardSubmit()"]')
+  if(btn){ btn.disabled=true; btn.textContent='Saving...' }
+  const demoLink = document.getElementById('w-demo')?.value?.trim()
+  const demoType = document.getElementById('w-demo-type')?.value
+  if(!demoLink){ toast('Please provide a demo link','error'); if(btn){btn.disabled=false;btn.textContent='Submit Entry'} return }
+  S.wizardData.demo_link = demoLink
+  S.wizardData.demo_type = demoType
+  try {
+    // Create or update submission first (we need the ID for pdf path)
+    const sub = await upsertSubmission({
+      title: S.wizardData.title,
+      summary: S.wizardData.summary,
+      category: S.wizardData.category,
+      video_link: S.wizardData.video_link||null,
+      demo_link: S.wizardData.demo_link,
+      demo_type: S.wizardData.demo_type,
+      pdf_url: S.wizardData.pdf_url||null,
+    })
+    // Upload PDF if selected
+    if(pendingPdfFile){
+      const url = await uploadPdf(pendingPdfFile, sub.id)
+      await sb.from('submissions').update({pdf_url:url}).eq('id',sub.id)
+      S.wizardData.pdf_url = url
+    }
+    pendingPdfFile = null
+    // Show success
+    const sc = document.getElementById('wizard-step-content')
+    sc.innerHTML=`<div class="wizard-card" style="text-align:center;padding:48px 28px">
+      <div style="font-size:48px;margin-bottom:16px">🏆</div>
+      <h3 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:10px">${S.wizardData.id?'Submission Updated!':'Submission Received!'}</h3>
+      <p>Your entry for AI Throne ${escHTML(S.event.quarter_label)} has been ${S.wizardData.id?'updated':'submitted successfully'}.${!S.event.visibility_open?' It will be visible to all participants after the admin opens the review period.':''}</p>
+      <button class="btn-primary" style="width:auto;padding:12px 28px;margin-top:24px" onclick="navigate('feed')">← Back to Feed</button>
+    </div>`
+    ;[0,1,2,3].forEach(i=>{ document.querySelectorAll('.wdot')[i]?.classList.add('done') })
+  } catch(err){ toast(err.message||'Submission failed','error'); if(btn){btn.disabled=false;btn.textContent='Submit Entry'} }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: PROFILE
+═══════════════════════════════════════════════════════════════ */
+async function renderProfile(){
+  const c = document.getElementById('content')
+  c.innerHTML=loadingHTML()
+  const uid = S.pageParams?.uid || S.user.id
+  const p = await cacheProfile(uid)
+  if(!p){ c.innerHTML='<div class="page"><div class="empty"><h4>Profile not found</h4></div></div>'; return }
+  const isMe = uid===S.user.id
+  // Load this user's submissions + reviewer stats
+  const [{data:subs},{data:revData}] = await Promise.all([
+    sb.from('submission_scores').select('*').eq('user_id',uid).order('created_at',{ascending:false}),
+    sb.from('reviewer_scores').select('*').eq('user_id',uid).maybeSingle()
+  ])
+  const revStats = revData||{total_ratings:0,unique_submissions:0}
+
+  c.innerHTML=`<div class="page"><div style="max-width:700px;margin:0 auto">
+    <div class="profile-banner">
+      <div class="profile-ava-wrap">
+        <div class="ava ava-xl" style="background:${avaColor(p.full_name)};border:3px solid var(--bg2)">
+          ${p.avatar_url?`<img src="${escHTML(p.avatar_url)}" alt="" onerror="this.parentElement.innerHTML='${escHTML(initials(p.full_name))}'">`:escHTML(initials(p.full_name))}
+        </div>
+        ${isMe?`<div class="profile-ava-edit" onclick="triggerAvatarUpload()" title="Change photo">✎</div>
+        <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">`:'' }
+      </div>
+    </div>
+    <div class="profile-body">
+      <div class="profile-name-row">
+        <div style="flex:1">
+          <div class="profile-fullname">${escHTML(p.full_name)}</div>
+          <div class="profile-info">${escHTML(p.job_title||'')}${p.job_title&&p.department?' · ':''}${escHTML(p.department||'')}${p.team?' · '+escHTML(p.team):''}</div>
+        </div>
+        ${isMe?`<button class="btn-secondary" onclick="showEditProfile()">Edit Profile</button>`:''}
+      </div>
+      <div class="profile-stats">
+        <div class="pstat"><div class="pstat-n">${(subs||[]).length}</div><div class="pstat-l">Submissions</div></div>
+        <div class="pstat"><div class="pstat-n" style="color:var(--teal)">${revStats.total_ratings}</div><div class="pstat-l">Ratings Given</div></div>
+        <div class="pstat"><div class="pstat-n">${(subs||[]).filter(s=>s.rating_count>=3).length>0?Math.max(...(subs||[]).filter(s=>s.rating_count>=3).map(s=>s.avg_total)):0}</div><div class="pstat-l">Best Score</div></div>
+        <div class="pstat"><div class="pstat-n" style="color:var(--purple)">${p.role==='admin'||p.role==='super_admin'?'Admin':'Member'}</div><div class="pstat-l">Role</div></div>
+      </div>
+      <div class="badge-chips">
+        ${revStats.total_ratings>=20?'<div class="pbadge" style="background:rgba(38,181,164,0.1);color:var(--teal);border-color:rgba(38,181,164,0.3)">✦ Active Reviewer</div>':''}
+        ${(subs||[]).some(s=>s.avg_total>=25&&s.rating_count>=3)?'<div class="pbadge" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3)">🏆 High Scorer</div>':''}
+        ${(subs||[]).length>=2?'<div class="pbadge" style="background:rgba(123,110,246,0.1);color:var(--purple);border-color:rgba(123,110,246,0.3)">⚡ Repeat Participant</div>':''}
+      </div>
+    </div>
+    <div class="card" style="overflow:hidden">
+      <div class="card-hdr"><span class="card-hdr-title">Submissions</span></div>
+      ${(subs||[]).length===0?'<div class="empty" style="padding:24px"><h4>No submissions yet</h4></div>':(subs||[]).map(s=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer" onclick="openSubmissionModal('${s.id}')">
+        <div style="width:8px;height:8px;border-radius:50%;background:${deptColor(s.category)};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(s.title)}</div>
+          <div style="font-size:11px;color:var(--muted)">${escHTML(s.category)} · ${formatDate(s.created_at)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--gold)">${s.rating_count>=3?s.avg_total:'—'}</div>
+          <div style="font-size:10px;color:var(--muted)">${s.rating_count} rater${s.rating_count!==1?'s':''}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+    ${isMe?`<div id="edit-profile-section"></div>`:''}
+  </div></div>`
+}
+
+function triggerAvatarUpload(){ document.getElementById('avatar-input')?.click() }
+async function handleAvatarUpload(input){
+  const file = input.files[0]
+  if(!file) return
+  if(file.size>5*1024*1024){ toast('Image too large (max 5MB)','error'); return }
+  try {
+    toast('Uploading avatar...','info')
+    const url = await uploadAvatar(file)
+    await updateMyProfile({avatar_url:url})
+    toast('Avatar updated!','success')
+    renderPage()
+    // Update sidebar avatar
+    renderShell(); renderPage()
+  } catch(err){ toast(err.message||'Upload failed','error') }
+}
+
+function showEditProfile(){
+  const p = S.profile
+  const sec = document.getElementById('edit-profile-section')
+  if(!sec) return
+  sec.innerHTML=`<div class="card" style="padding:22px;margin-top:12px">
+    <div class="card-hdr-title" style="margin-bottom:16px">Edit Profile</div>
+    <div class="form-row">
+      <div class="field"><label>Full Name *</label><input id="ep-name" value="${escHTML(p.full_name||'')}"></div>
+      <div class="field"><label>Job Title</label><input id="ep-title" value="${escHTML(p.job_title||'')}"></div>
+    </div>
+    <div class="form-row mt12">
+      <div class="field"><label>Department</label>
+        <select id="ep-dept">
+          ${['UA','Engineering','QA','Creative','Product','Finance','Ops','HR','Marketing','Data','Others'].map(o=>`<option ${p.department===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Team</label><input id="ep-team" value="${escHTML(p.team||'')}"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn-secondary" onclick="document.getElementById('edit-profile-section').innerHTML=''">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:10px 20px" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>`
+}
+async function saveProfile(){
+  const name = document.getElementById('ep-name')?.value?.trim()
+  if(!name){ toast('Name is required','error'); return }
+  try {
+    await updateMyProfile({
+      full_name: name,
+      job_title: document.getElementById('ep-title')?.value?.trim()||null,
+      department: document.getElementById('ep-dept')?.value||null,
+      team: document.getElementById('ep-team')?.value?.trim()||null,
+    })
+    toast('Profile updated!','success')
+    renderShell(); renderPage()
+  } catch(err){ toast(err.message||'Update failed','error') }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: NOTIFICATIONS
+═══════════════════════════════════════════════════════════════ */
+async function renderNotifications(){
+  const c = document.getElementById('content')
+  c.innerHTML=loadingHTML()
+  const notifs = await loadNotifications()
+  await markAllRead()
+  S.notifications = notifs.map(n=>({...n,is_read:true}))
+  const nbadge=document.getElementById('notif-badge')
+  if(nbadge) nbadge.classList.add('hidden')
+  c.innerHTML=`<div class="page">
+    <div class="page-hdr"><h2>Notifications</h2></div>
+    ${notifs.length===0?'<div class="empty"><h4>No notifications yet</h4><p>You\'ll be notified when someone rates or comments on your submissions.</p></div>':
+    `<div class="card" style="overflow:hidden">
+      ${notifs.map(n=>`<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.03);${!n.is_read?'background:rgba(201,168,76,0.04)':''}">
+        <div style="width:8px;height:8px;border-radius:50%;background:${!n.is_read?'var(--gold)':'var(--bg5)'};flex-shrink:0;margin-top:6px"></div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:var(--text)">${escHTML(n.message)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${timeAgo(n.created_at)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`}
+  </div>`
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: ADMIN
+═══════════════════════════════════════════════════════════════ */
+async function renderAdmin(){
+  const isAdmin = S.profile?.role==='admin'||S.profile?.role==='super_admin'
+  if(!isAdmin){ document.getElementById('content').innerHTML='<div class="page"><div class="empty"><h4>Access denied</h4></div></div>'; return }
+  const c = document.getElementById('content')
+  c.innerHTML=loadingHTML()
+  const [pending, allUsers, allSubs] = await Promise.all([
+    loadPendingUsers(), adminLoadAllUsers(), adminLoadAllSubmissions()
+  ])
+
+  c.innerHTML=`<div class="page">
+    <div class="page-hdr"><h2>Admin Control Panel</h2><p>Manage users, event settings, submissions and content</p></div>
+    <div class="astat-grid">
+      <div class="astat"><div class="astat-n" style="color:var(--gold)">${allSubs.length}</div><div class="astat-l">Submissions</div></div>
+      <div class="astat"><div class="astat-n" style="color:var(--teal)">${allUsers.filter(u=>u.status==='approved').length}</div><div class="astat-l">Active Users</div></div>
+      <div class="astat"><div class="astat-n" style="color:var(--coral)">${pending.length}</div><div class="astat-l">Pending Approval</div></div>
+      <div class="astat"><div class="astat-n" style="color:var(--blue)">${allUsers.length}</div><div class="astat-l">Total Registered</div></div>
+    </div>
+    <div class="admin-grid">
+      <!-- Pending users -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-title">Pending Approvals</span><span class="nav-badge">${pending.length}</span></div>
+        <div style="padding:14px 16px">
+          ${pending.length===0?'<div class="text-muted" style="padding:8px 0">No pending approvals</div>':
+          pending.map(u=>`<div class="pending-row" id="pu-${u.id}">
+            <div class="ava ava-sm" style="background:${avaColor(u.full_name)}">${escHTML(initials(u.full_name))}</div>
+            <div class="pu-info"><div class="pu-name">${escHTML(u.full_name)}</div><div class="pu-meta">${escHTML(u.department||'')} · ${formatDate(u.created_at)}</div></div>
+            <button class="btn-success" onclick="adminApprove('${u.id}')">✓ Approve</button>
+            <button class="btn-danger" onclick="adminReject('${u.id}')">✕</button>
+          </div>`).join('')}
+        </div>
+      </div>
+      <!-- Event settings -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-title">Event Settings</span></div>
+        <div style="padding:14px 16px">
+          ${S.event?`
+          <div style="margin-bottom:12px">
+            <div style="font-size:12px;color:var(--muted2);margin-bottom:4px">Current event</div>
+            <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--white)">${escHTML(S.event.title)} · ${escHTML(S.event.quarter_label)}</div>
+          </div>
+          ${[
+            ['visibility_open','Submissions Visible to All','Show submissions to all participants'],
+            ['rating_enabled','Ratings Enabled','Allow peer rating'],
+            ['commenting_enabled','Comments Enabled','Allow comments'],
+            ['leaderboard_visible','Leaderboard Visible','Show public leaderboard'],
+          ].map(([key,lbl,sub])=>`<div class="toggle-row">
+            <div><div class="toggle-lbl">${lbl}</div><div class="toggle-sub">${sub}</div></div>
+            <div class="toggle-wrap" onclick="toggleEventSetting('${key}',this)">
+              <div class="toggle-track ${S.event[key]?'on':''}"></div>
+              <div class="toggle-thumb ${S.event[key]?'on':''}"></div>
+            </div>
+          </div>`).join('')}
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn-danger" onclick="if(confirm('Archive this event? This will close it and allow creating a new quarter.')) archiveAndRefresh()">Archive Event</button>
+          </div>`:'<div class="text-muted">No active event. <button class="link-btn" onclick="showCreateEvent()">Create one →</button></div>'}
+          <div id="create-event-form"></div>
+        </div>
+      </div>
+      <!-- Announcement -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-title">Announcement Banner</span></div>
+        <div style="padding:14px 16px">
+          <textarea class="field" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);resize:vertical;min-height:80px;outline:none" id="ann-text" placeholder="Site-wide announcement...">${escHTML(S.event?.announcement||'')}</textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-gold-sm" onclick="saveAnnouncement()">Post Announcement</button>
+            <button class="btn-secondary" onclick="clearAnnouncement()">Clear</button>
+          </div>
+        </div>
+      </div>
+      <!-- Users management -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-title">All Users</span><span style="font-size:11px;color:var(--muted)">${allUsers.length} total</span></div>
+        <div style="padding:10px 16px;max-height:280px;overflow-y:auto">
+          ${allUsers.map(u=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+            <div class="ava ava-xs" style="background:${avaColor(u.full_name)}">${escHTML(initials(u.full_name))}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(u.full_name)}</div>
+              <div style="font-size:10px;color:var(--muted)">${escHTML(u.department||'')} · <span style="color:${u.status==='approved'?'var(--teal)':u.status==='pending'?'var(--gold)':'var(--coral)'}">${u.status}</span></div>
+            </div>
+            <span style="font-size:10px;font-family:'Syne',sans-serif;font-weight:600;color:${u.role!=='participant'?'var(--gold)':'var(--muted)'}">${u.role==='super_admin'?'Super Admin':u.role==='admin'?'Admin':''}</span>
+            ${u.id!==S.user.id&&u.role==='participant'&&u.status==='approved'?`<button class="btn-gold-sm" style="font-size:10px;padding:3px 8px" onclick="adminPromote('${u.id}')">→ Admin</button>`:''}
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <!-- Submissions management -->
+    <div class="card" style="margin-top:14px;overflow:hidden">
+      <div class="card-hdr"><span class="card-hdr-title">All Submissions This Quarter</span>
+        <button class="btn-secondary" style="font-size:11px;padding:5px 12px" onclick="exportCSV()">Export CSV</button>
+      </div>
+      ${allSubs.length===0?'<div class="empty" style="padding:24px"><h4>No submissions</h4></div>':allSubs.map(s=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.03)">
+        <div class="dept-tag" style="background:${deptBg(s.category)};color:${deptColor(s.category)};border:1px solid ${deptBorder(s.category)};position:static;font-size:10px;padding:3px 8px;border-radius:4px">${escHTML(s.category)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="openSubmissionModal('${s.id}')" style="cursor:pointer">${escHTML(s.title)}</div>
+          <div style="font-size:11px;color:var(--muted)">${escHTML(s.profiles?.full_name||'')} · ${formatDate(s.created_at)}</div>
+        </div>
+        <span style="font-size:11px;color:${s.status==='submitted'?'var(--teal)':'var(--coral)'}">● ${s.status}</span>
+        <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="if(confirm('Remove this submission?')) adminRemove('${s.id}')">Remove</button>
+      </div>`).join('')}
+    </div>
+  </div>`
+}
+
+async function adminApprove(uid){
+  document.getElementById(`pu-${uid}`)?.remove()
+  await approveUser(uid)
+}
+async function adminReject(uid){
+  document.getElementById(`pu-${uid}`)?.remove()
+  await rejectUser(uid)
+}
+async function adminPromote(uid){ await promoteToAdmin(uid); navigate('admin') }
+async function adminRemove(id){ await removeSubmission(id); navigate('admin') }
+
+async function toggleEventSetting(key, wrap){
+  if(!S.event) return
+  const newVal = !S.event[key]
+  const track = wrap.querySelector('.toggle-track')
+  const thumb = wrap.querySelector('.toggle-thumb')
+  track.classList.toggle('on', newVal)
+  thumb.classList.toggle('on', newVal)
+  await updateEvent({[key]:newVal})
+  toast(`${key.replace(/_/g,' ')} ${newVal?'enabled':'disabled'}`, 'info')
+}
+
+async function saveAnnouncement(){
+  const t = document.getElementById('ann-text')?.value?.trim()||null
+  await updateEvent({announcement:t})
+  toast('Announcement updated','success')
+}
+async function clearAnnouncement(){
+  document.getElementById('ann-text').value=''
+  await updateEvent({announcement:null})
+  toast('Announcement cleared','info')
+}
+async function archiveAndRefresh(){ await archiveEvent(); navigate('admin') }
+
+function showCreateEvent(){
+  document.getElementById('create-event-form').innerHTML=`
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border2)">
+      <div class="field"><label>Event Title</label><input id="new-ev-title" value="AI Throne"></div>
+      <div class="field mt12"><label>Quarter Label</label><input id="new-ev-q" placeholder="Q2 2026"></div>
+      <button class="btn-primary" style="width:auto;padding:9px 18px;margin-top:12px" onclick="doCreateEvent()">Create Event</button>
+    </div>`
+}
+async function doCreateEvent(){
+  const t=document.getElementById('new-ev-title')?.value?.trim()
+  const q=document.getElementById('new-ev-q')?.value?.trim()
+  if(!t||!q){ toast('Fill in all fields','error'); return }
+  await createEvent(t,q)
+}
+
+async function exportCSV(){
+  const subs = await adminLoadAllSubmissions()
+  const rows = [['Title','Category','Author','Department','Status','Submitted'].join(',')]
+  subs.forEach(s=>{
+    rows.push([`"${(s.title||'').replace(/"/g,'""')}"`,s.category,`"${(s.profiles?.full_name||'').replace(/"/g,'""')}"`,s.profiles?.department||'',s.status,formatDate(s.created_at)].join(','))
+  })
+  const blob = new Blob([rows.join('\n')],{type:'text/csv'})
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ai-throne-submissions.csv'; a.click()
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTH PAGES
+═══════════════════════════════════════════════════════════════ */
+function renderAuth(tab='login'){
+  document.getElementById('app').innerHTML=`
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin:0 auto 12px">
+          <path d="M8 38L11 16L22 29L24 8L26 29L37 16L40 38H8Z" stroke="#C9A84C" stroke-width="2" stroke-linejoin="round" fill="rgba(201,168,76,0.1)"/>
+          <rect x="8" y="38" width="32" height="5" rx="2" fill="rgba(201,168,76,0.2)" stroke="#C9A84C" stroke-width="1.5"/>
+          <circle cx="24" cy="8" r="3" fill="#C9A84C"/>
+        </svg>
+        <h1>AI Throne</h1>
+        <p>Game District · Innovation Platform</p>
+      </div>
+      <div class="auth-tabs">
+        <div class="auth-tab ${tab==='login'?'active':''}" onclick="renderAuth('login')">Sign In</div>
+        <div class="auth-tab ${tab==='signup'?'active':''}" onclick="renderAuth('signup')">Sign Up</div>
+      </div>
+      ${tab==='login'?loginFormHTML():signupFormHTML()}
+    </div>
+  </div>`
+}
+
+function loginFormHTML(){
+  return `<form class="auth-form" onsubmit="doLogin(event)">
+    <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@gamedistrict.com" required autocomplete="email"></div>
+    <div class="field"><label>Password</label><input type="password" name="password" placeholder="••••••••" required autocomplete="current-password"></div>
+    <div class="err-msg hidden" id="login-err"></div>
+    <button type="submit" class="btn-primary">Sign In</button>
+    <div style="text-align:center;font-size:12px;color:var(--muted)">Don't have an account? <button type="button" class="link-btn" onclick="renderAuth('signup')">Sign up</button></div>
+  </form>`
+}
+
+function signupFormHTML(){
+  return `<form class="auth-form" onsubmit="doSignup(event)">
+    <div class="field"><label>Full Name *</label><input name="full_name" placeholder="Your full name" required></div>
+    <div class="form-row">
+      <div class="field"><label>Email *</label><input type="email" name="email" placeholder="you@gamedistrict.com" required autocomplete="email"></div>
+      <div class="field"><label>Password *</label><input type="password" name="password" placeholder="Min. 8 chars" required minlength="8" autocomplete="new-password"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Department *</label>
+        <select name="department" required>
+          <option value="">Select...</option>
+          ${['UA','Engineering','QA','Creative','Product','Finance','Ops','HR','Marketing','Data','Others'].map(o=>`<option>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Job Title</label><input name="job_title" placeholder="e.g. Senior Manager"></div>
+    </div>
+    <div class="field"><label>Team</label><input name="team" placeholder="e.g. Growth"></div>
+    <div class="err-msg hidden" id="signup-err"></div>
+    <button type="submit" class="btn-primary">Create Account</button>
+    <div style="text-align:center;font-size:12px;color:var(--muted)">Already have an account? <button type="button" class="link-btn" onclick="renderAuth('login')">Sign in</button></div>
+  </form>`
+}
+
+// Fix: auth forms need err-msg to not be hidden initially (we use it to show errors)
+document.querySelectorAll('.err-msg').forEach(el=>{el.classList.add('hidden')})
+
+function pendingScreenHTML(context){
+  if(context==='submitted'){
+    return `<div class="pending-screen"><div class="pending-card">
+      <div style="font-size:48px;margin-bottom:16px">⏳</div>
+      <h2>Account Created!</h2>
+      <p>Your account is pending approval from an admin. You'll be able to sign in once approved. Please check back in a little while.</p>
+      <button class="btn-primary" onclick="renderAuth('login')">Back to Sign In</button>
+    </div></div>`
+  }
+  return `<div class="pending-screen"><div class="pending-card">
+    <div style="font-size:48px;margin-bottom:16px">⏳</div>
+    <h2>Awaiting Approval</h2>
+    <p>Your account is pending admin approval. You'll have full access once an admin approves your signup. Contact your organizer to speed this up.</p>
+    <button class="btn-primary" onclick="doLogout()">Sign Out</button>
+  </div></div>`
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE ROUTER
+═══════════════════════════════════════════════════════════════ */
+async function renderPage(){
+  const c = document.getElementById('content')
+  if(!c) return
+  switch(S.page){
+    case 'feed':        await renderFeed(); break
+    case 'explore':     await renderExplore(); break
+    case 'submit':      await renderSubmit(); break
+    case 'leaderboard': await renderLeaderboard(); break
+    case 'reviewers':   await renderReviewers(); break
+    case 'profile':     await renderProfile(); break
+    case 'notifications': await renderNotifications(); break
+    case 'admin':       await renderAdmin(); break
+    default: await renderFeed()
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+async function onLogin(user){
+  S.user = user
+  S.profile = await loadMyProfile(user.id)
+  if(!S.profile){
+    // Profile might not exist yet (race condition on signup), retry once
+    await new Promise(r=>setTimeout(r,1000))
+    S.profile = await loadMyProfile(user.id)
+  }
+  if(!S.profile || S.profile.status==='pending'){
+    document.getElementById('app').innerHTML = pendingScreenHTML('pending')
+    return
+  }
+  if(S.profile.status==='rejected'){
+    await sb.auth.signOut()
+    document.getElementById('app').innerHTML = `<div class="pending-screen"><div class="pending-card">
+      <div style="font-size:48px;margin-bottom:16px">🚫</div>
+      <h2>Account Not Approved</h2>
+      <p>Your signup request was not approved. Please contact the event organizer for assistance.</p>
+      <button class="btn-primary" onclick="renderAuth('login')">Back to Sign In</button>
+    </div></div>`
+    return
+  }
+  // Load event and notifications
+  S.event = await loadCurrentEvent()
+  S.notifications = await loadNotifications()
+  S.allProfiles[user.id] = S.profile
+  renderShell()
+  renderPage()
+  // Subscribe to realtime notifications
+  sb.channel(`notif-${user.id}`)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:`user_id=eq.${user.id}`},
+      async(p)=>{ S.notifications.unshift(p.new); updateNotifBadge() })
+    .subscribe()
+}
+
+function updateNotifBadge(){
+  const unread = S.notifications.filter(n=>!n.is_read).length
+  const badge = document.getElementById('notif-badge')
+  const dot = document.querySelector('.notif-dot')
+  if(badge){ badge.textContent=unread; badge.classList.toggle('hidden',unread===0) }
+  if(dot){ dot.style.display=unread?'block':'none' }
+}
+
+async function init(){
+  const { data: { session } } = await sb.auth.getSession()
+  if(session){
+    await onLogin(session.user)
+  } else {
+    renderAuth('login')
+  }
+  sb.auth.onAuthStateChange(async(event, session)=>{
+    if(event==='SIGNED_IN' && session){
+      await onLogin(session.user)
+    } else if(event==='SIGNED_OUT'){
+      S.user=null; S.profile=null; S.event=null
+      renderAuth('login')
+    }
+  })
+}
+
+// Start the app
+init()
+</script>
+</body>
+</html>
